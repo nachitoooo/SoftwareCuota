@@ -7,6 +7,13 @@ import os
 import datetime
 from PIL import Image, ImageTk
 
+def apply_button_style(button):
+    button.config(
+        bg="#E0E0E0", 
+        fg="black",    
+        font=("Helvetica", 12), 
+        relief=tk.RAISED  
+    )
 
 def restar_dia_global():
     try:
@@ -125,67 +132,63 @@ def verificar_dni():
             break
 
     if not dni_encontrado:
-        messagebox.showerror("DNI no encontrado", f"El DNI {dni_a_verificar} no se encuentra en la base de datos.")
+        messagebox.showerror("NEW GYM -- DNI no encontrado", f"El DNI {dni_a_verificar} no se encuentra en la base de datos.")
 
 def crear_interfaz():
     root = tk.Tk()
-    root.title("Control de membresía de gimnasio")
+    root.title("NEW GYM - CONTROL MEMBRESÍA")
     root.geometry("600x600")
-    root.configure(bg="black")  # Fondo negro
+    root.configure(bg="black")
 
     cargar_datos()
 
-    # Marco principal para centrar
-    frame_main = tk.Frame(root, bg="black")  # Fondo negro
+    frame_main = tk.Frame(root, bg="black")
     frame_main.pack(expand=True, fill="both")
-    
-    logo_path = os.path.join("img", "logo_gimnasio.png")  # Asegúrate de tener la imagen del logo en la carpeta "img"
+
+    logo_path = os.path.join("img", "logo_gimnasio.png")
     if os.path.exists(logo_path):
-     logo_image = Image.open(logo_path)
+        logo_image = Image.open(logo_path)
+        nuevo_ancho = 300
+        nuevo_alto = 300
+        logo_image = logo_image.resize((nuevo_ancho, nuevo_alto), Image.ANTIALIAS)
+        logo_photo = ImageTk.PhotoImage(logo_image)
+        logo_label = tk.Label(frame_main, image=logo_photo, bg="black")
+        logo_label.image = logo_photo
+        logo_label.pack(pady=10)
 
-    nuevo_ancho = 300
-    nuevo_alto = 300 
-    logo_image = logo_image.resize((nuevo_ancho, nuevo_alto), Image.ANTIALIAS)
-
-    # Convertir la imagen redimensionada a PhotoImage para tkinter
-    logo_photo = ImageTk.PhotoImage(logo_image)
-
-    # Luego, puedes usar logo_photo en tu etiqueta de imagen
-    logo_label = tk.Label(frame_main, image=logo_photo, bg="black")
-    logo_label.image = logo_photo
-    logo_label.pack(pady=10)
-
-    # Marco para agregar nuevos clientes
     frame_nuevo_cliente = tk.Frame(frame_main, bg="black", bd=3, relief=tk.RIDGE, padx=20, pady=20)
     frame_nuevo_cliente.pack(padx=10, pady=10, expand=True)
 
-    # Etiquetas y campos de entrada para agregar nuevos clientes
-    ttk.Label(frame_nuevo_cliente, text="DNI:", background="black", font=("Helvetica", 12), foreground="white").grid(row=0, column=0, padx=10, pady=10, sticky="e")
+    ttk.Label(frame_nuevo_cliente, text="DNI:", background="black", font=("Helvetica", 12), foreground="white").pack()
     entry_dni = tk.Entry(frame_nuevo_cliente, font=("Helvetica", 12))
-    entry_dni.grid(row=0, column=1, padx=10, pady=10)
+    entry_dni.pack(fill=tk.X, padx=10, pady=10)
 
-    ttk.Label(frame_nuevo_cliente, text="Nombre:", background="black", font=("Helvetica", 12), foreground="white").grid(row=1, column=0, padx=10, pady=10, sticky="e")
+    ttk.Label(frame_nuevo_cliente, text="Nombre:", background="black", font=("Helvetica", 12), foreground="white").pack()
     entry_nombre = tk.Entry(frame_nuevo_cliente, font=("Helvetica", 12))
-    entry_nombre.grid(row=1, column=1, padx=10, pady=10)
+    entry_nombre.pack(fill=tk.X, padx=10, pady=10)
 
-    ttk.Label(frame_nuevo_cliente, text="Apellido:", background="black", font=("Helvetica", 12), foreground="white").grid(row=2, column=0, padx=10, pady=10, sticky="e")
+    ttk.Label(frame_nuevo_cliente, text="Apellido:", background="black", font=("Helvetica", 12), foreground="white").pack()
     entry_apellido = tk.Entry(frame_nuevo_cliente, font=("Helvetica", 12))
-    entry_apellido.grid(row=2, column=1, padx=10, pady=10)
+    entry_apellido.pack(fill=tk.X, padx=10, pady=10)
 
-    boton_agregar_cliente = tk.Button(frame_nuevo_cliente, text="Agregar cliente", command=lambda: agregar_cliente(entry_dni, entry_nombre, entry_apellido), bg="green", fg="white", font=("Helvetica", 12, "bold"), relief=tk.RAISED)
-    boton_agregar_cliente.grid(row=3, column=0, columnspan=2, padx=10, pady=10)
+    button_frame = tk.Frame(frame_nuevo_cliente, bg="black")
+    button_frame.pack(pady=10)
 
-    boton_verificar_dni = tk.Button(frame_main, text="Verificar DNI", command=verificar_dni, bg="orange", fg="white", font=("Helvetica", 12, "bold"), relief=tk.RAISED)
+    boton_agregar_cliente = tk.Button(button_frame, text="Agregar cliente", command=lambda: agregar_cliente(entry_dni, entry_nombre, entry_apellido))
+    apply_button_style(boton_agregar_cliente)
+    boton_agregar_cliente.pack(side=tk.LEFT, padx=10, pady=10)
+
+    boton_ver_clientes = tk.Button(button_frame, text="Ver Clientes", command=ver_clientes, bg="#96A6A4", fg="black", font=("Helvetica", 12, "bold"), relief=tk.RAISED)
+    apply_button_style(boton_ver_clientes)
+    boton_ver_clientes.pack(side=tk.LEFT, padx=10, pady=10)
+
+    boton_verificar_dni = tk.Button(frame_main, text="Verificar DNI", command=verificar_dni, bg="#96A6A4", fg="black", font=("Helvetica", 12, "bold"), relief=tk.RAISED)
     boton_verificar_dni.pack(pady=10)
 
-    # Cuadro de entrada para DNI a verificar
     ttk.Label(frame_main, text="DNI a verificar:", background="black", font=("Helvetica", 12), foreground="white").pack(pady=5)
     global entry_dni_a_verificar
     entry_dni_a_verificar = tk.Entry(frame_main, font=("Helvetica", 12))
     entry_dni_a_verificar.pack(pady=5)
-
-    boton_ver_clientes = tk.Button(frame_main, text="Ver Clientes", command=ver_clientes, bg="blue", fg="white", font=("Helvetica", 12, "bold"), relief=tk.RAISED)
-    boton_ver_clientes.pack(pady=20)
 
     root.mainloop()
 
