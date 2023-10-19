@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk, Scrollbar, messagebox
+from tkinter import ttk, Scrollbar, messagebox, simpledialog
 import csv
 import time
 import threading
@@ -8,6 +8,9 @@ import datetime
 from PIL import Image, ImageTk
 
 lista_clientes = None
+
+
+
 
 def apply_button_style(button):
     button.config(
@@ -81,31 +84,30 @@ def agregar_cliente(entry_dni, entry_nombre, entry_apellido, entry_dias):
         entry_apellido.delete(0, tk.END)
         entry_dias.delete(0, tk.END)  
 
-def eliminar_cliente(cliente, lista_clientes):
-    result = messagebox.askyesno("Confirmar", "¿Estás seguro de eliminar este cliente?")
-    if result:
-        dni_cliente = cliente[1]
-        lista_clientes.delete(tk.ACTIVE)
-        clientes = cargar_datos()
-        for c in clientes:
-            if c[1] == dni_cliente:
-                clientes.remove(c)
-                break
-        guardar_datos(clientes)
-
+def eliminar_cliente(lista_clientes):
+    item_seleccionado = lista_clientes.selection()
+    if item_seleccionado:
+        result = messagebox.askyesno("Confirmar", "¿Estás seguro de eliminar este cliente?")
+        if result:
+            lista_clientes.delete(item_seleccionado)
+            dni_cliente = item_seleccionado[0] 
+            clientes = cargar_datos()
+            for c in clientes:
+                if c[1] == dni_cliente:
+                    clientes.remove(c)
+                    break
+            guardar_datos(clientes)
 
 def obtener_cliente_seleccionado(lista_clientes):
-    seleccion = lista_clientes.curselection()
-    if seleccion:
-        indice = seleccion[0]
-        cliente_seleccionado = lista_clientes.get(indice)
+    item_seleccionado = lista_clientes.selection()
+    if item_seleccionado:
+        cliente_seleccionado = lista_clientes.item(item_seleccionado)["values"]
         return cliente_seleccionado
     else:
         return None
 
 
-def guardar_cambios(entry_nombre, entry_apellido, entry_dni, entry_dias, lista_clientes, ventana_edicion):
-    print("Guardando cambios...")
+def guardar_cambios(entry_nombre, entry_apellido, entry_dni, entry_dias, lista_clientes, ventana_edicion, dni_anterior):
     if lista_clientes is None:
         messagebox.showerror("Error", "La lista de clientes no está disponible.")
         return
@@ -114,7 +116,6 @@ def guardar_cambios(entry_nombre, entry_apellido, entry_dni, entry_dias, lista_c
     if cliente_seleccionado is None:
         messagebox.showerror("Error", "Selecciona un cliente para editar.")
         return
-    dni_cliente_seleccionado = cliente_seleccionado.split(" - ")[1].split("DNI: ")[1]
 
     nuevos_datos = [
         entry_nombre.get(),
@@ -125,113 +126,110 @@ def guardar_cambios(entry_nombre, entry_apellido, entry_dni, entry_dias, lista_c
 
     clientes = cargar_datos()
 
-    for indice, cliente in enumerate(clientes):
-        # Compara el DNI del cliente actual con el DNI del cliente seleccionado
-        if cliente[1] == dni_cliente_seleccionado:
-            # Extrae el número de días de la cadena y luego conviértelo en un entero
-            nuevos_dias_str = nuevos_datos[3].split(' ')[0]
-            nuevos_dias = int(nuevos_dias_str) if nuevos_dias_str.isdigit() else 0
+    for cliente in clientes:
+        if cliente[1] == dni_anterior:
+            cliente[0] = nuevos_datos[0]  
+            cliente[2] = nuevos_datos[1]  
+            cliente[1] = nuevos_datos[2] 
+            cliente[3] = nuevos_datos[3]  
 
-            # Actualiza los datos del cliente
-            clientes[indice] = [
-                nuevos_datos[0],
-                nuevos_datos[2],  # Cambia el DNI
-                nuevos_datos[1],  # Cambia el apellido
-                str(nuevos_dias),  # Actualiza los días restantes como cadena
-            ]
+    guardar_datos(clientes)  
 
-            # Actualiza la lista de clientes
-            lista_clientes.delete(indice)
-            adeuda_dias = f"{nuevos_dias} días restantes" if nuevos_dias > 0 else "Al día"
-            lista_clientes.insert(indice, f"NOMBRE: {nuevos_datos[0]} APELLIDO: {nuevos_datos[1]} - DNI: {nuevos_datos[2]} - {adeuda_dias}")
+    item_seleccionado = lista_clientes.selection()
+    lista_clientes.item(item_seleccionado, values=(nuevos_datos[0], nuevos_datos[2], nuevos_datos[1], nuevos_datos[3]))
 
-            guardar_datos(clientes)
-            ventana_edicion.destroy()
-            break
-
-    guardar_datos(clientes)
+    ventana_edicion.destroy()
 
 
-def editar_cliente(clientes, lista_clientes):
-    cliente_seleccionado = obtener_cliente_seleccionado(lista_clientes)
-    print("Cliente seleccionado:", cliente_seleccionado)
-    if cliente_seleccionado is None:
+
+
+
+def editar_cliente(lista_clientes):
+    item_seleccionado = lista_clientes.selection()
+    if not item_seleccionado:
         messagebox.showerror("Error", "Selecciona un cliente para editar.")
         return
 
     ventana_edicion = tk.Toplevel()
     ventana_edicion.title("Editar Cliente")
 
-    partes_cliente = cliente_seleccionado.split(" - ")
-    nombre_apellido = partes_cliente[0].split("NOMBRE: ")[1]
-    dni = partes_cliente[1].split("DNI: ")[1]
-    dias_deseados = partes_cliente[2]
+    cliente_seleccionado = obtener_cliente_seleccionado(lista_clientes)
 
-    nombre_actual, apellido_actual = nombre_apellido.split(" APELLIDO: ")
-    
-    ttk.Label(ventana_edicion, text="Nombre:").pack()
-    entry_nombre = tk.Entry(ventana_edicion)
-    entry_nombre.insert(0, nombre_actual)  
-    entry_nombre.pack()
+    if cliente_seleccionado:
+        partes_cliente = cliente_seleccionado[0].split(" - ")
+        nombre = ""
+        dni = ""
+        dias_deseados = ""
 
-    ttk.Label(ventana_edicion, text="Apellido:").pack()
-    entry_apellido = tk.Entry(ventana_edicion)
-    entry_apellido.insert(0, apellido_actual) 
-    entry_apellido.pack()
+        for parte in partes_cliente:
+            if parte.startswith("NOMBRE: "):
+                nombre = parte.split("NOMBRE: ")[1]
+            elif parte.startswith("DNI: "):
+                dni = parte.split("DNI: ")[1]
+            else:
+                dias_deseados = parte
 
-    ttk.Label(ventana_edicion, text="DNI:").pack()
-    entry_dni = tk.Entry(ventana_edicion)
-    entry_dni.insert(0, dni)  
-    entry_dni.pack()
+        ttk.Label(ventana_edicion, text="Nombre:").pack()
+        entry_nombre = tk.Entry(ventana_edicion)
+        entry_nombre.insert(0, nombre)
+        entry_nombre.pack()
 
-    ttk.Label(ventana_edicion, text="Días deseados:").pack()
-    entry_dias = tk.Entry(ventana_edicion)
-    entry_dias.insert(0, dias_deseados)  
-    entry_dias.pack()
+        ttk.Label(ventana_edicion, text="DNI:").pack()
+        entry_dni = tk.Entry(ventana_edicion)
+        entry_dni.insert(0, dni)
+        entry_dni.pack()
 
-    boton_guardar = tk.Button(ventana_edicion, text="Guardar Cambios", command=lambda: guardar_cambios(entry_nombre, entry_apellido, entry_dni, entry_dias, lista_clientes, ventana_edicion))
+        ttk.Label(ventana_edicion, text="Días deseados:").pack()
+        entry_dias = tk.Entry(ventana_edicion)
+        entry_dias.pack()
 
-    boton_guardar.pack()
+        ttk.Label(ventana_edicion, text="Nuevo Apellido:").pack()
+        entry_apellido = tk.Entry(ventana_edicion)
+        entry_apellido.pack()
 
-    boton_cancelar = tk.Button(ventana_edicion, text="Cancelar", command=ventana_edicion.destroy)
-    boton_cancelar.pack()
+        boton_guardar = tk.Button(ventana_edicion, text="Guardar Cambios", command=lambda: guardar_cambios(entry_nombre, entry_apellido, entry_dni, entry_dias, lista_clientes, ventana_edicion, dni))
+        boton_guardar.pack()
+
+        boton_cancelar = tk.Button(ventana_edicion, text="Cancelar", command=ventana_edicion.destroy)
+        boton_cancelar.pack()
+
+
+
+
+
 
 def ver_clientes():
     global lista_clientes  
+    if lista_clientes is not None:
+        for item in lista_clientes.get_children():
+            lista_clientes.delete(item)
+
+    ventana_clientes = tk.Toplevel()
+    ventana_clientes.title("Lista de Clientes")
+    ventana_clientes.geometry("800x800")
+
+    lista_clientes = ttk.Treeview(ventana_clientes, columns=("Nombre", "DNI", "Apellido", "Días Restantes"), show="headings")
+    lista_clientes.heading("Nombre", text="Nombre")
+    lista_clientes.heading("Apellido", text="Apellido")
+    lista_clientes.heading("DNI", text="DNI")
+    lista_clientes.heading("Días Restantes", text="Días Restantes")
+
+    scroll_y = ttk.Scrollbar(ventana_clientes, orient="vertical", command=lista_clientes.yview)
+    lista_clientes.configure(yscrollcommand=scroll_y.set)
+
     clientes = cargar_datos()
-    if hasattr(ver_clientes, 'ventana_clientes') and ver_clientes.ventana_clientes.winfo_exists():
-        ventana_clientes = ver_clientes.ventana_clientes
-        ventana_clientes.title("Clientes")
-    else:
-        ventana_clientes = tk.Toplevel()
-        ventana_clientes.title("Lista de Clientes")
-        ver_clientes.ventana_clientes = ventana_clientes
-
-    boton_editar_cliente = tk.Button(ventana_clientes, text="Editar Cliente", command=lambda: editar_cliente(clientes, lista_clientes))
-
-    boton_eliminar_cliente = tk.Button(ventana_clientes, text="Eliminar Cliente", command=lambda: eliminar_cliente(obtener_cliente_seleccionado(lista_clientes), lista_clientes))
-    
-    boton_eliminar_cliente.pack(pady=10)
-
-  
-
-    boton_editar_cliente.pack(pady=10)
-
-    ventana_clientes.configure(bg="black")  
-
-    lista_clientes_label = tk.Label(ventana_clientes, text="Lista de Clientes", fg="white", bg="black", font=("Helvetica", 18, "bold"))
-    lista_clientes_label.pack()
-
-    lista_clientes = tk.Listbox(ventana_clientes, bg="black", fg="white", height=15, width=60, font=("Helvetica", 12))
-    lista_clientes.pack()
 
     for cliente in clientes:
-        nombre_cliente = cliente[0]
-        dni_cliente = cliente[1]
-        apellido_cliente = cliente[2]
-        dias_restantes = int(cliente[3])
-        adeuda_dias = f"{dias_restantes} días restantes" if dias_restantes > 0 else "Al día"
-        lista_clientes.insert(tk.END, f"NOMBRE: {nombre_cliente} APELLIDO: {apellido_cliente} - DNI: {dni_cliente} - {adeuda_dias}")
+        lista_clientes.insert("", "end", values=cliente)
+
+    boton_editar = tk.Button(ventana_clientes, text="Editar cliente", command=lambda: editar_cliente(lista_clientes))
+
+    boton_eliminar = tk.Button(ventana_clientes, text="Eliminar cliente", command=lambda: eliminar_cliente(lista_clientes))
+
+    lista_clientes.pack(side="left", fill="both", expand=True)
+    scroll_y.pack(side="right", fill="y")
+    boton_editar.pack()
+    boton_eliminar.pack()
 
 
 
@@ -257,7 +255,7 @@ def verificar_dni():
 def crear_interfaz():
     root = tk.Tk()
     root.title("NEW GYM - CONTROL MEMBRESÍA")
-    root.geometry("600x600")
+    root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth(), root.winfo_screenheight())) 
     root.configure(bg="black")
 
     cargar_datos()
