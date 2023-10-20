@@ -14,9 +14,9 @@ lista_clientes = None
 
 def apply_button_style(button):
     button.config(
-        bg="#E0E0E0", 
-        fg="black",    
-        font=("Helvetica", 12), 
+        bg="#c4561b", 
+        fg="#b0b0b0",    
+        font=("Arial", 12), 
         relief=tk.RAISED  
     )
 
@@ -292,15 +292,18 @@ def crear_interfaz():
     button_frame = tk.Frame(frame_nuevo_cliente, bg="black")
     button_frame.pack(pady=10)
 
-    boton_agregar_cliente = tk.Button(button_frame, text="agregar cliente", command=lambda: agregar_cliente(entry_dni, entry_nombre, entry_apellido, entry_dias))
+    boton_agregar_cliente = tk.Button(
+    button_frame, text="Agregar Cliente", command=lambda: agregar_cliente(entry_dni, entry_nombre, entry_apellido, entry_dias))
     apply_button_style(boton_agregar_cliente)
     boton_agregar_cliente.pack(side=tk.LEFT, padx=10, pady=10)
 
+    
     boton_ver_clientes = tk.Button(button_frame, text="ver / editar clientes", command=ver_clientes, bg="#96A6A4", fg="black", font=("Helvetica", 12, "bold"), relief=tk.RAISED)
     apply_button_style(boton_ver_clientes)
     boton_ver_clientes.pack(side=tk.LEFT, padx=10, pady=10)
 
     boton_verificar_dni = tk.Button(frame_main, text="verificar DNI", command=verificar_dni, bg="#96A6A4", fg="black", font=("Helvetica", 12, "bold"), relief=tk.RAISED)
+    apply_button_style(boton_verificar_dni)
     boton_verificar_dni.pack(pady=10)
 
     ttk.Label(frame_main, text="DNI a verificar", background="black", font=("Helvetica", 12), foreground="white").pack(pady=5)
@@ -314,6 +317,8 @@ def crear_interfaz():
 
     button_frame = tk.Frame(frame_nuevo_cliente, bg="black")
     button_frame.pack(pady=10)
+
+    
 
     root.mainloop()
 
