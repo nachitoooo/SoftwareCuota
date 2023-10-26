@@ -3,7 +3,9 @@ from tkinter import ttk, Scrollbar, messagebox, simpledialog
 import os
 from PIL import Image, ImageTk
 import json
-import re
+from customtkinter import *
+from customtkinter import CTkEntry, CTkButton
+
 
 
 lista_clientes = None
@@ -174,9 +176,30 @@ def eliminar_cliente(lista_clientes):
         if result:
             dni_cliente = lista_clientes.item(item_seleccionado[0])["values"][1]
             clientes = cargar_datos()
-            clientes = [cliente for cliente in clientes if cliente["dni"] != dni_cliente]
-            guardar_datos(clientes)
+            clientes.remove(clientes[lista_clientes.index(item_seleccionado[0])])
+            guardar_datos(clientes)  
             lista_clientes.delete(item_seleccionado)
+def buscar_cliente(nombre, apellido, dni):
+    if not lista_clientes:
+        messagebox.showinfo("No hay clientes", "No hay clientes para buscar.")
+        return
+
+    for item in lista_clientes.get_children():
+        values = lista_clientes.item(item, 'values')
+        nombre_cliente = values[0]
+        apellido_cliente = values[2]
+        dni_cliente = values[1]
+
+        if (nombre and nombre.lower() in nombre_cliente.lower()) or \
+           (apellido and apellido.lower() in apellido_cliente.lower()) or \
+           (dni and dni in dni_cliente):
+            lista_clientes.selection_set(item)
+        else:
+            lista_clientes.selection_remove(item)
+
+    if not lista_clientes.selection():
+        messagebox.showinfo("Sin Resultados", "No se encontraron resultados para la búsqueda.")
+
 
 def ver_clientes():
     global lista_clientes
@@ -186,6 +209,32 @@ def ver_clientes():
         ventana_clientes = tk.Toplevel()
         ventana_clientes.title("Lista de Clientes")
         ventana_clientes.geometry("800x800")
+
+        style = ttk.Style()
+        style.configure("Title.TLabel", background="black", font=("Helvetica", 14), foreground="white")
+        style.configure("TButton", font=("Helvetica", 12))
+        style.configure("TEntry", font=("Helvetica", 12))
+
+        ttk.Label(ventana_clientes, text="Buscar Cliente", style="Title.TLabel").pack(pady=10)
+
+        frame_busqueda = ttk.Frame(ventana_clientes)
+        frame_busqueda.pack(pady=10, padx=10)
+
+        ttk.Label(frame_busqueda, text="Nombre").grid(row=0, column=0, padx=10, pady=5)
+        entry_buscar_nombre = ttk.Entry(frame_busqueda)
+        entry_buscar_nombre.grid(row=0, column=1, padx=10, pady=5)
+
+        ttk.Label(frame_busqueda, text="Apellido").grid(row=1, column=0, padx=10, pady=5)
+        entry_buscar_apellido = ttk.Entry(frame_busqueda)
+        entry_buscar_apellido.grid(row=1, column=1, padx=10, pady=5)
+
+        ttk.Label(frame_busqueda, text="DNI").grid(row=2, column=0, padx=10, pady=5)
+        entry_buscar_dni = ttk.Entry(frame_busqueda)
+        entry_buscar_dni.grid(row=2, column=1, padx=10, pady=5)
+
+        boton_buscar_cliente = CTkButton(frame_busqueda, text="Buscar Cliente", corner_radius=25, fg_color="#edb605", command=lambda: buscar_cliente(entry_buscar_nombre.get(), entry_buscar_apellido.get(), entry_buscar_dni.get()))
+        boton_buscar_cliente.grid(row=3, columnspan=2, pady=10)
+ 
 
         lista_clientes = ttk.Treeview(ventana_clientes, columns=("Nombre", "DNI", "Apellido", "Días Restantes"), show="headings")
         lista_clientes.heading("Nombre", text="Nombre")
@@ -202,17 +251,18 @@ def ver_clientes():
             for cliente in clientes:
                 lista_clientes.insert("", "end", values=(cliente["nombre"], cliente["dni"], cliente["apellido"], cliente["dias_restantes"]))
 
-        boton_editar = tk.Button(ventana_clientes, text="Editar Cliente", command=editar_cliente)
+        frame_botones = ttk.Frame(ventana_clientes)
+        frame_botones.pack(pady=10)
 
+        boton_editar = ttk.Button(frame_botones, text="Editar Cliente", command=editar_cliente)
+        boton_editar.grid(row=0, column=0, padx=10)
 
-        boton_eliminar = tk.Button(ventana_clientes, text="Eliminar cliente", command=lambda: eliminar_cliente(lista_clientes))
+        boton_eliminar = ttk.Button(frame_botones, text="Eliminar Cliente", command=lambda: eliminar_cliente(lista_clientes))
+        boton_eliminar.grid(row=0, column=1, padx=10)
 
         lista_clientes.pack(side="left", fill="both", expand=True)
         scroll_y.pack(side="right", fill="y")
-        boton_editar.pack()
-        boton_eliminar.pack()
 
-    ventana_clientes.focus_force()
 
 def guardar_datos(clientes):
     try:
@@ -224,11 +274,11 @@ def guardar_datos(clientes):
 
 
 
-
 def crear_interfaz():
-    root = tk.Tk()
+    root = CTk()
     root.title("NEW GYM - CONTROL MEMBRESÍA")
     root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth(), root.winfo_screenheight()))
+
     root.configure(bg="black")
 
     frame_main = tk.Frame(root, bg="black")
@@ -239,7 +289,7 @@ def crear_interfaz():
         logo_image = Image.open(logo_path)
         nuevo_ancho = 300
         nuevo_alto = 300
-        logo_image = logo_image.resize((nuevo_ancho, nuevo_alto), Image.ANTIALIAS)
+        logo_image = logo_image.resize((nuevo_ancho, nuevo_alto), Image.LANCZOS)
         logo_photo = ImageTk.PhotoImage(logo_image)
         logo_label = tk.Label(frame_main, image=logo_photo, bg="black")
         logo_label.image = logo_photo
@@ -249,26 +299,47 @@ def crear_interfaz():
     frame_nuevo_cliente.pack(padx=10, pady=10, expand=True)
 
     ttk.Label(frame_nuevo_cliente, text="DNI", background="black", font=("Helvetica", 12), foreground="white").pack()
-    entry_dni = tk.Entry(frame_nuevo_cliente, font=("Helvetica", 12))
+
+    entry_dni = CTkEntry(frame_nuevo_cliente, font=("Helvetica", 12), bg_color="white", fg_color="black")
     entry_dni.pack(fill=tk.X, padx=10, pady=10)
 
-    ttk.Label(frame_nuevo_cliente, text="nombre", background="black", font=("Helvetica", 12), foreground="white").pack()
-    entry_nombre = tk.Entry(frame_nuevo_cliente, font=("Helvetica", 12))
-    entry_nombre.pack(fill=tk.X, padx=10, pady=10)
+    ttk.Label(frame_nuevo_cliente, text="Nombre", background="black", font=("Helvetica", 12), foreground="white").pack()
+    entry_nombre = CTkEntry(frame_nuevo_cliente, font=("Helvetica", 12), bg_color="white", fg_color="black")
+    entry_nombre.pack(fill=tk.X, padx=10, pady=10)    
 
-    ttk.Label(frame_nuevo_cliente, text="apellido", background="black", font=("Helvetica", 12), foreground="white").pack()
-    entry_apellido = tk.Entry(frame_nuevo_cliente, font=("Helvetica", 12))
+    ttk.Label(frame_nuevo_cliente, text="Apellido", background="black", font=("Helvetica", 12), foreground="white").pack()
+    entry_apellido = CTkEntry(frame_nuevo_cliente, font=("Helvetica", 12), bg_color="white", fg_color="black")
     entry_apellido.pack(fill=tk.X, padx=10, pady=10)
+    
 
     button_frame = tk.Frame(frame_nuevo_cliente, bg="black")
     button_frame.pack(pady=10)
 
-    boton_agregar_cliente = tk.Button(
-    button_frame, text="Agregar Cliente", command=lambda: agregar_cliente(entry_dni, entry_nombre, entry_apellido, entry_dias))
-    boton_agregar_cliente.pack(side=tk.LEFT, padx=10, pady=10)
+    boton_agregar_cliente = CTkButton(
+    button_frame, 
+    text="Agregar Cliente",
+    corner_radius=25,
+    text_color="black",
+    fg_color="#FFA500",
+    font=("Helvetica", 14, "bold"),  
+    command=lambda: agregar_cliente(entry_dni, entry_nombre, entry_apellido, entry_dias)
+    )
 
-    boton_ver_clientes = tk.Button(button_frame, text="ver / editar clientes", command=ver_clientes, bg="#96A6A4", fg="black", font=("Helvetica", 12, "bold"), relief=tk.RAISED)
+    boton_agregar_cliente.pack(side=tk.LEFT, padx=10, pady=10)
+    boton_agregar_cliente.configure(hover_color="#f57b01")
+
+     
+    boton_ver_clientes = CTkButton(
+    button_frame, 
+    text="Gestionar Clientes",
+    corner_radius=25,
+    fg_color="#FFA500",
+    text_color="black",
+    font=("Helvetica", 14, "bold"),  
+    command=ver_clientes
+)
     boton_ver_clientes.pack(side=tk.LEFT, padx=10, pady=10)
+    boton_ver_clientes.configure(hover_color="#f57b01")
 
     boton_verificar_dni = tk.Button(frame_main, text="verificar DNI", command=verificar_dni, bg="#96A6A4", fg="black", font=("Helvetica", 12, "bold"), relief=tk.RAISED)
     boton_verificar_dni.pack(pady=10)
