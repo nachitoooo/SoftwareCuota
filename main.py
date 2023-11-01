@@ -1,228 +1,65 @@
 import tkinter as tk
-from tkinter import ttk, Scrollbar, messagebox
-import csv
-import time
-import threading
+from tkinter import ttk, Scrollbar, messagebox, simpledialog
 import os
-import datetime
 from PIL import Image, ImageTk
+import json
+from customtkinter import *
+import datetime
+#variables globales
 
 lista_clientes = None
+ventana_clientes = None
+ventana_edicion = None
+clientes = []
 
-def apply_button_style(button):
-    button.config(
-        bg="#E0E0E0", 
-        fg="black",    
-        font=("Helvetica", 12), 
-        relief=tk.RAISED  
-    )
-
-
-
-def restar_dia_global():
+def cargar_ultima_actualizacion():
     try:
-        with open("ultima_resta.txt", "r") as file:
-            ultima_resta_str = file.read()
-            if ultima_resta_str:
-                ultima_resta = datetime.datetime.strptime(ultima_resta_str, "%Y-%m-%d %H:%M:%S")
-            else:
-                ultima_resta = datetime.datetime(2000, 1, 1)
+        with open("ultima_actualizacion.txt", "r") as file:
+            fecha_str = file.read()
+            if fecha_str:
+                return datetime.datetime.strptime(fecha_str, "%Y-%m-%d")
     except FileNotFoundError:
-        ultima_resta = datetime.datetime(2000, 1, 1)    
-
-    ahora = datetime.datetime.now()
-
-    tiempo_transcurrido = ahora - ultima_resta
-
-    if tiempo_transcurrido.total_seconds() >= 24 * 60 * 60:
-        clientes = cargar_datos()
-        for cliente in clientes:
-            dias_restantes = int(cliente[3])
-            if dias_restantes > 0:
-                dias_restantes -= 1
-            cliente[3] = str(dias_restantes)
-        guardar_datos(clientes)
-
-        with open("ultima_resta.txt", "w") as file:
-            file.write(ahora.strftime("%Y-%m-%d %H:%M:%S"))
-
-    tiempo_espera = 24 * 60 * 60
-    threading.Timer(tiempo_espera, restar_dia_global).start()
-
-
-def cargar_datos():
-    clientes = []
-    with open("clientes.csv", newline="") as file:
-        reader = csv.reader(file)
-        for row in reader:
-            clientes.append(row)
-    return clientes
-
-
-def guardar_datos(clientes):
-    with open("clientes.csv", "w", newline="") as file:
-        writer = csv.writer(file)
-        writer.writerows(clientes)
-
-
-def agregar_cliente(entry_dni, entry_nombre, entry_apellido, entry_dias):
-    dni = entry_dni.get()
-    nombre = entry_nombre.get()
-    apellido = entry_apellido.get()
-    dias = entry_dias.get()
-
-    if dni and nombre and apellido and dias:
-        with open("clientes.csv", "a", newline="") as file:
-            writer = csv.writer(file)
-            writer.writerow([nombre, dni, apellido, dias]) 
-
-        entry_dni.delete(0, tk.END)
-        entry_nombre.delete(0, tk.END)
-        entry_apellido.delete(0, tk.END)
-        entry_dias.delete(0, tk.END)  
-
-def eliminar_cliente(cliente, lista_clientes):
-    result = messagebox.askyesno("Confirmar", "¿Estás seguro de eliminar este cliente?")
-    if result:
-        dni_cliente = cliente[1]
-        lista_clientes.delete(tk.ACTIVE)
-        clientes = cargar_datos()
-        for c in clientes:
-            if c[1] == dni_cliente:
-                clientes.remove(c)
-                break
-        guardar_datos(clientes)
-
-def obtener_cliente_seleccionado(lista_clientes):
-    seleccion = lista_clientes.curselection()
-    if seleccion:
-        indice = seleccion[0]
-        cliente_seleccionado = lista_clientes.get(indice)
-        return cliente_seleccionado
-    else:
         return None
+
+# Función para actualizar los días restantes de los clientes
+def restar_dia_a_clientes(clientes, ultima_actualizacion):
+    fecha_actual = datetime.datetime.now()
+    diferencia = fecha_actual - ultima_actualizacion
+    dias_pasados = diferencia.days
+
+    if dias_pasados > 0:
+        for cliente in clientes:
+            dias_restantes = int(cliente["dias_restantes"])
+            if dias_restantes > 0:
+                cliente["dias_restantes"] = max(dias_restantes - dias_pasados, 0)
+
+# Función para guardar la fecha actual como la nueva última actualización
+def guardar_ultima_actualizacion():
+    fecha_actual = datetime.datetime.now()
+    with open("ultima_actualizacion.txt", "w") as file:
+        file.write(fecha_actual.strftime("%Y-%m-%d"))
+def cargar_datos():
+    global clientes
+    try:
+        with open("clientes.json", "r") as file:
+            clientes = json.load(file)
+        return clientes
+    except FileNotFoundError:
+        return []
     
-
-def editar_cliente(clientes, lista_clientes):
-    cliente_seleccionado = obtener_cliente_seleccionado(lista_clientes)
-    print("Cliente seleccionado:", cliente_seleccionado) 
-    if cliente_seleccionado is None:
-        messagebox.showerror("Error", "Selecciona un cliente para editar.")
-        return
-
-    ventana_edicion = tk.Toplevel()
-    ventana_edicion.title("Editar Cliente")
-
-    partes_cliente = cliente_seleccionado.split(" - ")
-    nombre_apellido = partes_cliente[0].split("NOMBRE: ")[1]
-    dni = partes_cliente[1].split("DNI: ")[1]
-    dias_deseados = partes_cliente[2]
-
-    nombre_actual, apellido_actual = nombre_apellido.split(" APELLIDO: ")
-    
-    ttk.Label(ventana_edicion, text="Nombre:").pack()
-    entry_nombre = tk.Entry(ventana_edicion)
-    entry_nombre.insert(0, nombre_actual)  
-    entry_nombre.pack()
-
-    ttk.Label(ventana_edicion, text="Apellido:").pack()
-    entry_apellido = tk.Entry(ventana_edicion)
-    entry_apellido.insert(0, apellido_actual) 
-    entry_apellido.pack()
-
-    ttk.Label(ventana_edicion, text="DNI:").pack()
-    entry_dni = tk.Entry(ventana_edicion)
-    entry_dni.insert(0, dni)  
-    entry_dni.pack()
-
-    ttk.Label(ventana_edicion, text="Días deseados:").pack()
-    entry_dias = tk.Entry(ventana_edicion)
-    entry_dias.insert(0, dias_deseados)  
-    entry_dias.pack()
-
-    boton_guardar = tk.Button(ventana_edicion, text="Guardar Cambios", command=lambda: guardar_cambios(entry_nombre, entry_apellido, entry_dni, entry_dias, lista_clientes, ventana_edicion))
-
-    boton_guardar.pack()
-
-    boton_cancelar = tk.Button(ventana_edicion, text="Cancelar", command=ventana_edicion.destroy)
-    boton_cancelar.pack()
-
-
-def guardar_cambios(entry_nombre, entry_apellido, entry_dni, entry_dias, lista_clientes, ventana_edicion):
-    if lista_clientes is None:
-        messagebox.showerror("Error", "La lista de clientes no está disponible.")
-        return
-
-    cliente_seleccionado = obtener_cliente_seleccionado(lista_clientes)
-    if cliente_seleccionado is None:
-        messagebox.showerror("Error", "Selecciona un cliente para editar.")
-        return
-
-    clientes = cargar_datos()
-
-    for indice, cliente in enumerate(clientes):
-        if cliente == cliente_seleccionado:
-            clientes[indice] = [
-                entry_nombre.get(),
-                entry_apellido.get(),
-                entry_dni.get(),
-                entry_dias.get()
-            ]
-
-            dni_cliente = entry_dni.get()
-            apellido_cliente = entry_apellido.get()
-            dias_restantes = int(entry_dias.get())
-            adeuda_dias = f"{dias_restantes} días restantes" if dias_restantes > 0 else "Al día"
-            lista_clientes.delete(indice)
-            lista_clientes.insert(indice, f"NOMBRE: {entry_nombre.get()} APELLIDO: {apellido_cliente} - DNI: {dni_cliente} - {adeuda_dias}")
-
-            ventana_edicion.destroy()
-            break
-
-    guardar_datos(clientes)
-
-
-def ver_clientes():
-    clientes = cargar_datos()
-    if hasattr(ver_clientes, 'ventana_clientes') and ver_clientes.ventana_clientes.winfo_exists():
-        ventana_clientes = ver_clientes.ventana_clientes
-        ventana_clientes.title("Clientes")
-    else:
-        ventana_clientes = tk.Toplevel()
-        ventana_clientes.title("Lista de Clientes")
-        ver_clientes.ventana_clientes = ventana_clientes
-    boton_editar_cliente = tk.Button(ventana_clientes, text="Editar Cliente", command=lambda: editar_cliente(clientes, lista_clientes))
-
-    boton_editar_cliente.pack(pady=10)
-
-    ventana_clientes.configure(bg="black")  
-
-    lista_clientes_label = tk.Label(ventana_clientes, text="Lista de Clientes", fg="white", bg="black", font=("Helvetica", 18, "bold"))
-    lista_clientes_label.pack()
-
-    lista_clientes = tk.Listbox(ventana_clientes, bg="black", fg="white", height=15, width=60, font=("Helvetica", 12))
-    lista_clientes.pack()
-
-    for cliente in clientes:
-        nombre_cliente = cliente[0]
-        dni_cliente = cliente[1]
-        apellido_cliente = cliente[2]
-        dias_restantes = int(cliente[3])
-        adeuda_dias = f"{dias_restantes} días restantes" if dias_restantes > 0 else "Al día"
-        lista_clientes.insert(tk.END, f"NOMBRE: {nombre_cliente} APELLIDO: {apellido_cliente} - DNI: {dni_cliente} - {adeuda_dias}")
 
 def verificar_dni():
     dni_a_verificar = entry_dni_a_verificar.get()
-    
     clientes = cargar_datos()
-
     dni_encontrado = False
     for cliente in clientes:
-        if cliente[1] == dni_a_verificar:
+        if cliente["dni"] == dni_a_verificar:
             dni_encontrado = True
-            dias_restantes = int(cliente[3])
+            dias_restantes = int(cliente["dias_restantes"])
+            nombre_cliente = (cliente["nombre"])
+            apellido_cliente = (cliente["apellido"])
             if dias_restantes > 0:
-                messagebox.showinfo("DNI Encontrado", f"El DNI {dni_a_verificar} se encuentra en la base de datos. Quedan {dias_restantes} días.")
+                messagebox.showinfo("DNI Encontrado", f"El DNI {dni_a_verificar} corresponde con la base de datos. Nombre: {nombre_cliente}, Apellido: {apellido_cliente}. Quedan {dias_restantes} días.")
             else:
                 messagebox.showinfo("DNI Encontrado", f"El DNI {dni_a_verificar} se encuentra en la base de datos. Está al día.")
             break
@@ -230,71 +67,313 @@ def verificar_dni():
     if not dni_encontrado:
         messagebox.showerror("NEW GYM -- DNI no encontrado", f"El DNI {dni_a_verificar} no se encuentra en la base de datos.")
 
-def crear_interfaz():
-    root = tk.Tk()
-    root.title("NEW GYM - CONTROL MEMBRESÍA")
-    root.geometry("600x600")
-    root.configure(bg="black")
+def agregar_cliente(entry_dni, entry_nombre, entry_apellido, entry_dias, entry_monto_ingresado):
+    monto = entry_monto_ingresado.get()
+    dni = entry_dni.get()
+    nombre = entry_nombre.get()
+    apellido = entry_apellido.get()
+    dias = entry_dias.get()
+    if dni and nombre and apellido and dias:
+        try:
+            monto = int(monto)  
+        except ValueError:
+            messagebox.showerror("Error. El monto ingresado no es válido.")
+            return
+        clientes = cargar_datos()
+        nuevo_cliente = {"nombre": nombre, "dni": dni, "apellido": apellido, "dias_restantes": int(dias), "monto_ingresado": monto}  
+        clientes.append(nuevo_cliente)
+        guardar_datos(clientes)
+        entry_dni.delete(0, tk.END)
+        entry_nombre.delete(0, tk.END)
+        entry_apellido.delete(0, tk.END)
+        entry_dias.delete(0, tk.END)
+        entry_monto_ingresado.delete(0, tk.END)  
 
-    cargar_datos()
+def obtener_cliente_seleccionado(lista_clientes):
+    item_seleccionado = lista_clientes.selection()
+    if item_seleccionado:
+        cliente_seleccionado = lista_clientes.item(item_seleccionado[0])["values"]
+        return cliente_seleccionado
+    else:
+        return None
+    
+
+def actualizar_lista_clientes():
+    lista_clientes.delete(*lista_clientes.get_children())  
+    clientes = cargar_datos()  
+    for cliente in clientes:
+        lista_clientes.insert("", "end", values=(cliente["nombre"], cliente["dni"], cliente["apellido"], cliente["dias_restantes"]))
+
+def guardar_cambios(entry_nombre, entry_apellido, entry_dni, entry_dias, lista_clientes, dni_anterior):
+    global clientes
+    if lista_clientes is None:
+        messagebox.showerror("Error", "La lista de clientes no está disponible.")
+        return
+
+    item_seleccionado = lista_clientes.selection()
+    if not item_seleccionado:
+        messagebox.showerror("Error", "Selecciona un cliente para editar.")
+        return
+
+    cliente_index = lista_clientes.index(item_seleccionado)
+
+    if 0 <= cliente_index < len(clientes):
+        nuevos_datos = [
+            entry_nombre.get(),
+            entry_apellido.get(),
+            entry_dni.get(),
+            entry_dias.get()
+        ]
+
+        clientes[cliente_index] = {
+            "nombre": nuevos_datos[0],
+            "dni": nuevos_datos[2],  
+            "apellido": nuevos_datos[1],  
+            "dias_restantes": int(nuevos_datos[3])
+        }
+
+        guardar_datos(clientes)
+        ventana_edicion.destroy()
+        actualizar_lista_clientes()
+
+def editar_cliente():
+    cliente_seleccionado = obtener_cliente_seleccionado(lista_clientes)
+    if cliente_seleccionado:
+        global ventana_edicion
+        ventana_edicion = tk.Toplevel()
+        ventana_edicion.title("Editar Cliente")
+        
+        ttk.Label(ventana_edicion, text="Nombre:").pack()
+        entry_nombre = ttk.Entry(ventana_edicion)
+        entry_nombre.insert(0, cliente_seleccionado[0])
+        entry_nombre.pack()
+        
+        ttk.Label(ventana_edicion, text="Apellido:").pack()
+        entry_apellido = ttk.Entry(ventana_edicion)
+        entry_apellido.insert(0, cliente_seleccionado[2])
+        entry_apellido.pack()
+        
+        ttk.Label(ventana_edicion, text="DNI:").pack()
+        entry_dni = ttk.Entry(ventana_edicion)
+        entry_dni.insert(0, cliente_seleccionado[1])
+        entry_dni.pack()
+        
+        ttk.Label(ventana_edicion, text="Días Restantes:").pack()
+        entry_dias = ttk.Entry(ventana_edicion)
+        entry_dias.insert(0, cliente_seleccionado[3])
+        entry_dias.pack()
+        
+        def guardar_cambios():
+            nuevos_datos = [
+                entry_nombre.get(),
+                entry_dni.get(),
+                entry_apellido.get(),
+                entry_dias.get()
+            ]
+
+            if '' in nuevos_datos:
+                messagebox.showerror("Error", "Todos los campos son obligatorios")
+            else:
+                global clientes
+                if lista_clientes:
+                    item_seleccionado = lista_clientes.selection()
+                    if item_seleccionado:
+                        cliente_index = lista_clientes.index(item_seleccionado[0])
+                        if cliente_index is not None and 0 <= cliente_index < len(clientes):
+                            clientes[cliente_index] = {
+                                "nombre": nuevos_datos[0],
+                                "dni": nuevos_datos[1],
+                                "apellido": nuevos_datos[2],
+                                "dias_restantes": int(nuevos_datos[3])
+                            }
+                            guardar_datos(clientes)
+                            ventana_edicion.destroy()
+                            actualizar_lista_clientes()
+
+        ttk.Button(ventana_edicion, text="Guardar Cambios", command=guardar_cambios).pack()
+        
+def eliminar_cliente(lista_clientes):
+    item_seleccionado = lista_clientes.selection()
+    if item_seleccionado:
+        result = messagebox.askyesno("Confirmar", "¿Estás seguro de eliminar este cliente?")
+        if result:
+            dni_cliente = lista_clientes.item(item_seleccionado[0])["values"][1]
+            clientes = cargar_datos()
+            clientes.remove(clientes[lista_clientes.index(item_seleccionado[0])])
+            guardar_datos(clientes)  
+            lista_clientes.delete(item_seleccionado)
+
+def buscar_cliente(nombre, apellido, dni):
+    global lista_clientes
+    if not lista_clientes.get_children():
+        messagebox.showinfo("No hay clientes", "No hay clientes para buscar.")
+        return
+
+    for item in lista_clientes.get_children():
+        values = lista_clientes.item(item, 'values')
+        nombre_cliente = values[0]
+        apellido_cliente = values[1]
+        dni_cliente = values[2]
+
+        if (nombre and nombre.lower() in nombre_cliente.lower()) or \
+           (apellido and apellido.lower() in apellido_cliente.lower()) or \
+           (dni and dni in dni_cliente):
+            lista_clientes.selection_set(item)
+        else:
+            lista_clientes.selection_remove(item)
+
+    if not lista_clientes.selection():
+        messagebox.showinfo("Sin Resultados", "No se encontraron resultados para la búsqueda.")
+        
+def ver_clientes():
+    global lista_clientes
+    global ventana_clientes
+    
+    if ventana_clientes is None or not ventana_clientes.winfo_exists():
+        ventana_clientes = tk.Toplevel()
+        ventana_clientes.title("Lista de Clientes")
+        ventana_clientes.geometry("800x800")
+        style = ttk.Style()
+        style.configure("Title.TLabel", background="black", font=("Helvetica", 14), foreground="white")
+        style.configure("TButton", font=("Helvetica", 12))
+        style.configure("TEntry", font=("Helvetica", 12))
+        
+        frame_busqueda = ttk.Frame(ventana_clientes)
+        frame_busqueda.pack(pady=10, padx=10)
+        
+        label_buscar_cliente = CTkEntry(frame_busqueda, font=("Helvetica", 12), placeholder_text="Buscar por nombre, apellido o DNI.", width=400)
+        label_buscar_cliente.grid(row=0, column=1, padx=10, pady=5)
+        
+        entry_buscar = ttk.Entry(frame_busqueda)
+        searchIcon = CTkImage(Image.open(r"icon\search.png"))
+        buttonSearch = ttk.Button(frame_busqueda, text="Buscar", command=lambda: buscar_cliente(label_buscar_cliente.get(), None, None))
+        buttonSearch.grid(row=0, column=2, padx=10)
+        
+        lista_clientes = ttk.Treeview(ventana_clientes, columns=("Nombre", "DNI", "Apellido", "Días Restantes", "Monto Ingresado"), show="headings")
+        lista_clientes.heading("Nombre", text="Nombre")
+        lista_clientes.heading("Apellido", text="Apellido")
+        lista_clientes.heading("DNI", text="DNI")
+        lista_clientes.heading("Días Restantes", text="Días Restantes")
+        lista_clientes.heading("Monto Ingresado", text="Monto Ingresado")  
+
+        scroll_y = ttk.Scrollbar(ventana_clientes, orient="vertical", command=lista_clientes.yview)
+        lista_clientes.configure(yscrollcommand=scroll_y.set)
+        clientes = cargar_datos()
+        if clientes:
+            for cliente in clientes:
+                lista_clientes.insert("", "end", values=(cliente["nombre"], cliente["dni"], cliente["apellido"], cliente["dias_restantes"], cliente.get("monto_ingresado", 0.0)))
+
+        frame_botones = ttk.Frame(ventana_clientes)
+        frame_botones.pack(pady=10)
+
+        boton_editar = CTkButton(frame_botones, text="Editar Cliente", command=editar_cliente)
+        boton_editar.corner_radius = 25
+        boton_editar.fg_color = "#edb605"
+        boton_editar.grid(row=0, column=0, padx=10)
+
+        boton_eliminar = ttk.Button(frame_botones, text="Eliminar Cliente", command=lambda: eliminar_cliente(lista_clientes))
+        boton_eliminar.grid(row=0, column=1, padx=10)
+        
+        lista_clientes.pack(side="left", fill="both", expand=True)
+        scroll_y.pack(side="right", fill="y")
+
+def guardar_datos(clientes):
+    try:
+        with open("clientes.json", "w+") as file:
+            json.dump(clientes, file, indent=4)
+    except FileExistsError:
+        with open("clientes.json", "w") as file:
+            json.dump(clientes, file, indent=4)
+
+def crear_interfaz():
+    root = CTk()
+    root.title("NEW GYM - CONTROL MEMBRESÍA")
+    root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth(), root.winfo_screenheight()))
+    root.configure(bg="black")
 
     frame_main = tk.Frame(root, bg="black")
     frame_main.pack(expand=True, fill="both")
-
-    logo_path = os.path.join("img", "logo_gimnasio.png")
+    
+    logo_path = os.path.join("icon", "logo_gimnasio.png")
     if os.path.exists(logo_path):
         logo_image = Image.open(logo_path)
         nuevo_ancho = 300
         nuevo_alto = 300
-        logo_image = logo_image.resize((nuevo_ancho, nuevo_alto), Image.ANTIALIAS)
+        logo_image = logo_image.resize((nuevo_ancho, nuevo_alto), Image.LANCZOS)
         logo_photo = ImageTk.PhotoImage(logo_image)
         logo_label = tk.Label(frame_main, image=logo_photo, bg="black")
         logo_label.image = logo_photo
         logo_label.pack(pady=10)
 
-    frame_nuevo_cliente = tk.Frame(frame_main, bg="black", bd=3, relief=tk.RIDGE, padx=20, pady=20)
-    frame_nuevo_cliente.pack(padx=10, pady=10, expand=True)
+    frame_nuevo_cliente = tk.Frame(frame_main, bg="black", bd=1.4, relief=tk.RIDGE, padx=20, pady=20)
+    frame_nuevo_cliente.pack(padx=10, pady=10, expand=True)    
 
     ttk.Label(frame_nuevo_cliente, text="DNI", background="black", font=("Helvetica", 12), foreground="white").pack()
-    entry_dni = tk.Entry(frame_nuevo_cliente, font=("Helvetica", 12))
+    entry_dni = CTkEntry(frame_nuevo_cliente, font=("Helvetica", 12), bg_color="white", fg_color="black")
     entry_dni.pack(fill=tk.X, padx=10, pady=10)
 
-    ttk.Label(frame_nuevo_cliente, text="nombre", background="black", font=("Helvetica", 12), foreground="white").pack()
-    entry_nombre = tk.Entry(frame_nuevo_cliente, font=("Helvetica", 12))
-    entry_nombre.pack(fill=tk.X, padx=10, pady=10)
+    ttk.Label(frame_nuevo_cliente, text="Nombre", background="black", font=("Helvetica", 12), foreground="white").pack()
+    entry_nombre = CTkEntry(frame_nuevo_cliente, font=("Helvetica", 12), bg_color="white", fg_color="black")
+    entry_nombre.pack(fill=tk.X, padx=10, pady=10)    
 
-    ttk.Label(frame_nuevo_cliente, text="apellido", background="black", font=("Helvetica", 12), foreground="white").pack()
-    entry_apellido = tk.Entry(frame_nuevo_cliente, font=("Helvetica", 12))
+    ttk.Label(frame_nuevo_cliente, text="Apellido", background="black", font=("Helvetica", 12), foreground="white").pack()
+    entry_apellido = CTkEntry(frame_nuevo_cliente, font=("Helvetica", 12), bg_color="white", fg_color="black")
     entry_apellido.pack(fill=tk.X, padx=10, pady=10)
-
     button_frame = tk.Frame(frame_nuevo_cliente, bg="black")
     button_frame.pack(pady=10)
 
-    boton_agregar_cliente = tk.Button(button_frame, text="agregar cliente", command=lambda: agregar_cliente(entry_dni, entry_nombre, entry_apellido, entry_dias))
-    apply_button_style(boton_agregar_cliente)
+    boton_agregar_cliente = CTkButton(
+    button_frame, 
+    text="Agregar Cliente",
+    corner_radius=25,
+    text_color="black",
+    fg_color="#FFA500",
+    font=("Helvetica", 14, "bold"),  
+    command=lambda: agregar_cliente(entry_dni, entry_nombre, entry_apellido, entry_dias, entry_monto_ingresado)
+    )
     boton_agregar_cliente.pack(side=tk.LEFT, padx=10, pady=10)
-
-    boton_ver_clientes = tk.Button(button_frame, text="ver / editar clientes", command=ver_clientes, bg="#96A6A4", fg="black", font=("Helvetica", 12, "bold"), relief=tk.RAISED)
-    apply_button_style(boton_ver_clientes)
-    boton_ver_clientes.pack(side=tk.LEFT, padx=10, pady=10)
-
-    boton_verificar_dni = tk.Button(frame_main, text="verificar DNI", command=verificar_dni, bg="#96A6A4", fg="black", font=("Helvetica", 12, "bold"), relief=tk.RAISED)
-    boton_verificar_dni.pack(pady=10)
-
-    ttk.Label(frame_main, text="DNI a verificar", background="black", font=("Helvetica", 12), foreground="white").pack(pady=5)
-    global entry_dni_a_verificar
-    entry_dni_a_verificar = tk.Entry(frame_main, font=("Helvetica", 12))
-    entry_dni_a_verificar.pack(pady=5)
+    boton_agregar_cliente.configure(hover_color="#f57b01")
+    boton_ver_clientes = CTkButton(
+    button_frame, 
+    text="Gestionar Clientes",
+    corner_radius=25,
+    fg_color="#FFA500",
+    text_color="black",
+    font=("Helvetica", 14, "bold"),  
+    command=ver_clientes
+)
     
-    ttk.Label(frame_nuevo_cliente, text="días deseados", background="black", font=("Helvetica", 12), foreground="white").pack()
-    entry_dias = tk.Entry(frame_nuevo_cliente, font=("Helvetica", 12))
+    boton_ver_clientes.pack(side=tk.LEFT, padx=10, pady=10)
+    boton_ver_clientes.configure(hover_color="#f57b01")
+
+    boton_verificar_dni = CTkButton(frame_main, text="Verificar DNI", command=verificar_dni, corner_radius = 25, text_color="black", font=("Helvetica", 12, "bold"))
+    boton_verificar_dni.pack(pady=10)
+    global entry_dni_a_verificar
+    
+    entry_dni_a_verificar = CTkEntry(frame_main, font=("Helvetica", 12), placeholder_text="Ingrese su DNI.")
+    entry_dni_a_verificar.pack(pady=5)
+
+    ttk.Label(frame_nuevo_cliente, text="Días Deseados", background="black", font=("Helvetica", 12), foreground="white").pack()
+    entry_dias = CTkEntry(frame_nuevo_cliente, font=("Helvetica", 12), fg_color="black")
     entry_dias.pack(fill=tk.X, padx=10, pady=10)
 
-    button_frame = tk.Frame(frame_nuevo_cliente, bg="black")
-    button_frame.pack(pady=10)
-
+    ttk.Label(frame_nuevo_cliente, text="Monto Ingresado", background="black", font=("Helvetica", 12), foreground="white").pack()
+    entry_monto_ingresado = CTkEntry(frame_nuevo_cliente, font=("Helvetica", 12), fg_color="black")
+    entry_monto_ingresado.pack(fill=tk.X, padx=10, pady=10)
+    
+    sidebarImg = CTkImage(Image.open(r"icon\MaterialSymbolsMenu.png"))
+    buttonSideBar = CTkButton(frame_main, text = "" , image=sidebarImg, width=35, height=35, fg_color='black')
+    buttonSideBar.place(relx=0, rely=0)
     root.mainloop()
 
 if __name__ == "__main__":
-    restar_dia_global()
+    cargar_datos()
+    clientes = cargar_datos()
+    ultima_actualizacion = cargar_ultima_actualizacion
+    if ultima_actualizacion:
+        ultima_actualizacion = ultima_actualizacion() 
+        restar_dia_a_clientes(clientes, ultima_actualizacion)
+
+    guardar_datos(clientes)
+    guardar_ultima_actualizacion()
     crear_interfaz()

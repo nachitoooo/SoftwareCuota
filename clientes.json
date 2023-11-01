@@ -1,37 +1,9 @@
 [
     {
-        "nombre": "Ignacio",
-        "dni": "46264261",
+        "nombre": "Favio",
+        "dni": "18554049",
         "apellido": "Aristegui",
-        "dias_restantes": 60,
-        "monto_ingresado": 12000.0
-    },
-    {
-        "nombre": "fowadpgaw",
-        "dni": "12312333",
-        "apellido": "wdfwqefgaweg",
         "dias_restantes": 30,
-        "monto_ingresado": 6000.0
-    },
-    {
-        "nombre": "weewt",
-        "dni": "12888989",
-        "apellido": "owerqorewpf",
-        "dias_restantes": 30,
-        "monto_ingresado": 6000.0
-    },
-    {
-        "nombre": "Ignacia",
-        "dni": "46264262",
-        "apellido": "Aristega",
-        "dias_restantes": 1,
-        "monto_ingresado": 1000.0
-    },
-    {
-        "nombre": "weorpwetof",
-        "dni": "2312302",
-        "apellido": "lwefp\u00f1deag",
-        "dias_restantes": 1,
-        "monto_ingresado": 1000
+        "monto_ingresado": 6000
     }
 ]

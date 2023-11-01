@@ -5,39 +5,39 @@ from PIL import Image, ImageTk
 import json
 from customtkinter import *
 import datetime
-import threading
 #variables globales
+
 lista_clientes = None
 ventana_clientes = None
 ventana_edicion = None
 clientes = []
 
-
-def restar_un_dia_a_clientes():
+def cargar_ultima_actualizacion():
     try:
-        with open("ultima_resta.txt", "r") as file:
-            ultima_resta_str = file.read()
-            if ultima_resta_str:
-                ultima_resta = datetime.datetime.strptime(ultima_resta_str, "%Y-%m-%d %H:%M:%S")
-            else:
-                ultima_resta = datetime.datetime(2000, 1, 1)
+        with open("ultima_actualizacion.txt", "r") as file:
+            fecha_str = file.read()
+            if fecha_str:
+                return datetime.datetime.strptime(fecha_str, "%Y-%m-%d")
     except FileNotFoundError:
-        ultima_resta = datetime.datetime(2000, 1, 1)
+        return None
 
-    ahora = datetime.datetime.now()
-    tiempo_transcurrido = ahora - ultima_resta
-    if tiempo_transcurrido.total_seconds() >= 24 * 60 * 60:
-        clientes = cargar_datos()
+# Función para actualizar los días restantes de los clientes
+def restar_dia_a_clientes(clientes, ultima_actualizacion):
+    fecha_actual = datetime.datetime.now()
+    diferencia = fecha_actual - ultima_actualizacion
+    dias_pasados = diferencia.days
+
+    if dias_pasados > 0:
         for cliente in clientes:
             dias_restantes = int(cliente["dias_restantes"])
             if dias_restantes > 0:
-                dias_restantes -= 1
-            cliente["dias_restantes"] = dias_restantes
-        guardar_datos(clientes)
-        with open("ultima_resta.txt", "w") as file:
-            file.write(ahora.strftime("%Y-%m-%d %H:%M:%S"))
+                cliente["dias_restantes"] = max(dias_restantes - dias_pasados, 0)
 
-
+# Función para guardar la fecha actual como la nueva última actualización
+def guardar_ultima_actualizacion():
+    fecha_actual = datetime.datetime.now()
+    with open("ultima_actualizacion.txt", "w") as file:
+        file.write(fecha_actual.strftime("%Y-%m-%d"))
 def cargar_datos():
     global clientes
     try:
@@ -46,19 +46,20 @@ def cargar_datos():
         return clientes
     except FileNotFoundError:
         return []
+    
 
 def verificar_dni():
     dni_a_verificar = entry_dni_a_verificar.get()
-
     clientes = cargar_datos()
-
     dni_encontrado = False
     for cliente in clientes:
         if cliente["dni"] == dni_a_verificar:
             dni_encontrado = True
             dias_restantes = int(cliente["dias_restantes"])
+            nombre_cliente = (cliente["nombre"])
+            apellido_cliente = (cliente["apellido"])
             if dias_restantes > 0:
-                messagebox.showinfo("DNI Encontrado", f"El DNI {dni_a_verificar} se encuentra en la base de datos. Quedan {dias_restantes} días.")
+                messagebox.showinfo("DNI Encontrado", f"El DNI {dni_a_verificar} corresponde con la base de datos. Nombre: {nombre_cliente}, Apellido: {apellido_cliente}. Quedan {dias_restantes} días.")
             else:
                 messagebox.showinfo("DNI Encontrado", f"El DNI {dni_a_verificar} se encuentra en la base de datos. Está al día.")
             break
@@ -72,16 +73,14 @@ def agregar_cliente(entry_dni, entry_nombre, entry_apellido, entry_dias, entry_m
     nombre = entry_nombre.get()
     apellido = entry_apellido.get()
     dias = entry_dias.get()
-
     if dni and nombre and apellido and dias:
         try:
-            monto = int(monto)  # Convertir el monto ingresado a un número entero
+            monto = int(monto)  
         except ValueError:
             messagebox.showerror("Error. El monto ingresado no es válido.")
             return
-
         clientes = cargar_datos()
-        nuevo_cliente = {"nombre": nombre, "dni": dni, "apellido": apellido, "dias_restantes": int(dias), "monto_ingresado": monto}  # Almacenar el monto como un entero
+        nuevo_cliente = {"nombre": nombre, "dni": dni, "apellido": apellido, "dias_restantes": int(dias), "monto_ingresado": monto}  
         clientes.append(nuevo_cliente)
         guardar_datos(clientes)
         entry_dni.delete(0, tk.END)
@@ -136,7 +135,6 @@ def guardar_cambios(entry_nombre, entry_apellido, entry_dni, entry_dias, lista_c
         guardar_datos(clientes)
         ventana_edicion.destroy()
         actualizar_lista_clientes()
-
 
 def editar_cliente():
     cliente_seleccionado = obtener_cliente_seleccionado(lista_clientes)
@@ -205,7 +203,8 @@ def eliminar_cliente(lista_clientes):
             guardar_datos(clientes)  
             lista_clientes.delete(item_seleccionado)
 
-def buscar_cliente(nombre, apellido, dni):
+def buscar_cliente():
+    consulta = label_buscar_cliente.get()
     if not lista_clientes:
         messagebox.showinfo("No hay clientes", "No hay clientes para buscar.")
         return
@@ -215,10 +214,9 @@ def buscar_cliente(nombre, apellido, dni):
         nombre_cliente = values[0]
         apellido_cliente = values[2]
         dni_cliente = values[1]
-
-        if (nombre and nombre.lower() in nombre_cliente.lower()) or \
-           (apellido and apellido.lower() in apellido_cliente.lower()) or \
-           (dni and dni in dni_cliente):
+        if (consulta and consulta.lower() in nombre_cliente.lower()) or \
+           (consulta and consulta.lower() in apellido_cliente.lower()) or \
+           (consulta and consulta in dni_cliente):
             lista_clientes.selection_set(item)
         else:
             lista_clientes.selection_remove(item)
@@ -226,10 +224,10 @@ def buscar_cliente(nombre, apellido, dni):
     if not lista_clientes.selection():
         messagebox.showinfo("Sin Resultados", "No se encontraron resultados para la búsqueda.")
 
-
 def ver_clientes():
     global lista_clientes
     global ventana_clientes
+    global label_buscar_cliente 
 
     if ventana_clientes is None or not ventana_clientes.winfo_exists():
         ventana_clientes = tk.Toplevel()
@@ -239,38 +237,22 @@ def ver_clientes():
         style.configure("Title.TLabel", background="black", font=("Helvetica", 14), foreground="white")
         style.configure("TButton", font=("Helvetica", 12))
         style.configure("TEntry", font=("Helvetica", 12))
-
         frame_busqueda = ttk.Frame(ventana_clientes)
         frame_busqueda.pack(pady=10, padx=10)
 
-        ttk.Label(frame_busqueda, text="Nombre").grid(row=0, column=0, padx=10, pady=5)
-        entry_buscar_nombre = ttk.Entry(frame_busqueda)
-        entry_buscar_nombre.grid(row=0, column=1, padx=10, pady=5)
-
-        ttk.Label(frame_busqueda, text="Apellido").grid(row=1, column=0, padx=10, pady=5)
-        entry_buscar_apellido = ttk.Entry(frame_busqueda)
-        entry_buscar_apellido.grid(row=1, column=1, padx=10, pady=5)
-
-        ttk.Label(frame_busqueda, text="DNI").grid(row=2, column=0, padx=10, pady=5)
-        entry_buscar_dni = ttk.Entry(frame_busqueda)
-        entry_buscar_dni.grid(row=2, column=1, padx=10, pady=5)
-        
-        # boton_buscar_cliente = CTkButton(frame_busqueda, text="Buscar Cliente", corner_radius=25, fg_color="#edb605", command=lambda: buscar_cliente(entry_buscar_nombre.get(), entry_buscar_apellido.get(), entry_buscar_dni.get()))
-        # boton_buscar_cliente.grid(row=3, columnspan=2, pady=10)
-
         searchIcon = CTkImage(Image.open(r"icon\search.png"))
-        buttonSearch = CTkButton(frame_busqueda, text = "" , image=searchIcon, width=35, height=35, fg_color='white', corner_radius=25, command=lambda:buscar_cliente(entry_buscar_nombre.get(), entry_buscar_apellido.get(), entry_buscar_dni.get()))
-        buttonSearch.grid(row=3, columnspan=2, pady=10)
+        buttonSearch = CTkButton(frame_busqueda, text="Buscar cliente", text_color='#bdbdbd', image=searchIcon, width=35, height=35, fg_color='#333333', corner_radius=25, command=buscar_cliente)
+        buttonSearch.grid(row=0, column=1, padx=10)
+
+        label_buscar_cliente = CTkEntry(frame_busqueda, font=("Helvetica", 12), placeholder_text="Buscar por nombre, apellido o DNI.", width=400)
+        label_buscar_cliente.grid(row=0, column=0, padx=10)
         
-
-
-
         lista_clientes = ttk.Treeview(ventana_clientes, columns=("Nombre", "DNI", "Apellido", "Días Restantes", "Monto Ingresado"), show="headings")
         lista_clientes.heading("Nombre", text="Nombre")
         lista_clientes.heading("Apellido", text="Apellido")
         lista_clientes.heading("DNI", text="DNI")
         lista_clientes.heading("Días Restantes", text="Días Restantes")
-        lista_clientes.heading("Monto Ingresado", text="Monto Ingresado")  
+        lista_clientes.heading("Monto Ingresado", text="Monto Ingresado")
 
         scroll_y = ttk.Scrollbar(ventana_clientes, orient="vertical", command=lista_clientes.yview)
         lista_clientes.configure(yscrollcommand=scroll_y.set)
@@ -281,13 +263,13 @@ def ver_clientes():
 
         frame_botones = ttk.Frame(ventana_clientes)
         frame_botones.pack(pady=10)
-
-        boton_editar = CTkButton(frame_botones, text="Editar Cliente", command=editar_cliente)
-        boton_editar.corner_radius = 25
-        boton_editar.fg_color = "#edb605"
+        
+        pencilIcon = CTkImage(Image.open(r"icon\pencil.png"))
+        boton_editar = CTkButton(frame_botones, text="Editar Cliente", fg_color="#333333",text_color="#bdbdbd", command=editar_cliente, image=pencilIcon, corner_radius=25)
         boton_editar.grid(row=0, column=0, padx=10)
 
-        boton_eliminar = ttk.Button(frame_botones, text="Eliminar Cliente", command=lambda: eliminar_cliente(lista_clientes))
+        deleteIcon = CTkImage(Image.open(r"icon\delete.png"))
+        boton_eliminar = CTkButton(frame_botones, text="Eliminar Cliente",fg_color="#333333", text_color="#bdbdbd", image=deleteIcon, corner_radius=25, command=lambda: eliminar_cliente(lista_clientes))
         boton_eliminar.grid(row=0, column=1, padx=10)
         
         lista_clientes.pack(side="left", fill="both", expand=True)
@@ -306,8 +288,10 @@ def crear_interfaz():
     root.title("NEW GYM - CONTROL MEMBRESÍA")
     root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth(), root.winfo_screenheight()))
     root.configure(bg="black")
+
     frame_main = tk.Frame(root, bg="black")
     frame_main.pack(expand=True, fill="both")
+    
     logo_path = os.path.join("icon", "logo_gimnasio.png")
     if os.path.exists(logo_path):
         logo_image = Image.open(logo_path)
@@ -319,8 +303,8 @@ def crear_interfaz():
         logo_label.image = logo_photo
         logo_label.pack(pady=10)
 
-    frame_nuevo_cliente = tk.Frame(frame_main, bg="black", bd=3, relief=tk.RIDGE, padx=20, pady=20)
-    frame_nuevo_cliente.pack(padx=10, pady=10, expand=True)
+    frame_nuevo_cliente = tk.Frame(frame_main, bg="black", bd=1.4, relief=tk.RIDGE, padx=20, pady=20)
+    frame_nuevo_cliente.pack(padx=10, pady=10, expand=True)    
 
     ttk.Label(frame_nuevo_cliente, text="DNI", background="black", font=("Helvetica", 12), foreground="white").pack()
     entry_dni = CTkEntry(frame_nuevo_cliente, font=("Helvetica", 12), bg_color="white", fg_color="black")
@@ -380,6 +364,13 @@ def crear_interfaz():
     root.mainloop()
 
 if __name__ == "__main__":
-    restar_un_dia_a_clientes()
     cargar_datos()
+    clientes = cargar_datos()
+    ultima_actualizacion = cargar_ultima_actualizacion
+    if ultima_actualizacion:
+        ultima_actualizacion = ultima_actualizacion() 
+        restar_dia_a_clientes(clientes, ultima_actualizacion)
+
+    guardar_datos(clientes)
+    guardar_ultima_actualizacion()
     crear_interfaz()
