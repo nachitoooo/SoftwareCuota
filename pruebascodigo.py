@@ -142,10 +142,7 @@ def editar_cliente():
         global ventana_edicion
         ventana_edicion = tk.Toplevel()
         ventana_edicion.title("Editar Cliente")
-
         fuente = ("Arial", 15)
-
-        # Crea etiquetas con la fuente configurada
         CTkLabel(ventana_edicion, text="Nombre:", text_color="black", width=350, font=fuente).pack()
         entry_nombre = CTkEntry(ventana_edicion, font=fuente)
         entry_nombre.insert(0, cliente_seleccionado[0])
@@ -192,7 +189,8 @@ def editar_cliente():
                             guardar_datos(clientes)
                             ventana_edicion.destroy()
                             actualizar_lista_clientes()
-
+                            
+        tk.Frame(ventana_edicion, height=20).pack()
         saveIcon = CTkImage(Image.open(r"icon\save.png"))
         CTkButton(ventana_edicion, image=saveIcon,text_color='#bdbdbd',corner_radius=25, fg_color="#333333", text="Guardar Cambios", command=guardar_cambios).pack()
 
@@ -247,7 +245,7 @@ def ver_clientes():
         frame_busqueda.pack(pady=10, padx=10)
 
         searchIcon = CTkImage(Image.open(r"icon\search.png"))
-        buttonSearch = CTkButton(frame_busqueda, text="Buscar cliente", text_color='#bdbdbd', image=searchIcon, width=35, height=35, fg_color='#333333', corner_radius=25, command=buscar_cliente)
+        buttonSearch = CTkButton(frame_busqueda, text="Buscar cliente",font=("Helvetica", 12, "bold"), text_color='black', image=searchIcon, width=35, height=35, fg_color='#FFA500', hover_color="#f57b01", corner_radius=10, command=buscar_cliente)
         buttonSearch.grid(row=0, column=1, padx=10)
 
         label_buscar_cliente = CTkEntry(frame_busqueda, font=("Helvetica", 12), placeholder_text="Buscar por nombre, apellido o DNI.", width=400)
@@ -271,11 +269,11 @@ def ver_clientes():
         frame_botones.pack(pady=10)
         
         pencilIcon = CTkImage(Image.open(r"icon\pencil.png"))
-        boton_editar = CTkButton(frame_botones, text="Editar Cliente", fg_color="#333333",text_color="#bdbdbd", command=editar_cliente, image=pencilIcon, corner_radius=25)
+        boton_editar = CTkButton(frame_botones, text="Editar Cliente", font=("Helvetica", 12, "bold"), fg_color="#FFA500", hover_color="#f57b01", text_color="black", command=editar_cliente, image=pencilIcon, corner_radius=10)
         boton_editar.grid(row=0, column=0, padx=10)
 
         deleteIcon = CTkImage(Image.open(r"icon\delete.png"))
-        boton_eliminar = CTkButton(frame_botones, text="Eliminar Cliente",fg_color="#333333", text_color="#bdbdbd", image=deleteIcon, corner_radius=25, command=lambda: eliminar_cliente(lista_clientes))
+        boton_eliminar = CTkButton(frame_botones, text="Eliminar Cliente", font=("Helvetica", 12, "bold"), fg_color="#FFA500",hover_color="#f57b01", text_color="black", image=deleteIcon, corner_radius=10, command=lambda: eliminar_cliente(lista_clientes))
         boton_eliminar.grid(row=0, column=1, padx=10)
         
         lista_clientes.pack(side="left", fill="both", expand=True)

@@ -3,27 +3,20 @@
         "nombre": "sfssf",
         "dni": "18554049",
         "apellido": "Aristegui",
-        "dias_restantes": 29
+        "dias_restantes": 28
     },
     {
         "nombre": "Ignacio",
         "dni": "46264261",
         "apellido": "Aristegui",
-        "dias_restantes": 29,
+        "dias_restantes": 28,
         "monto_ingresado": 6000
     },
     {
         "nombre": "osdlkasd",
         "dni": "12123123",
         "apellido": "asdasdas",
-        "dias_restantes": 29,
+        "dias_restantes": 28,
         "monto_ingresado": 6000
-    },
-    {
-        "nombre": "marcos",
-        "dni": "12345678",
-        "apellido": "putito",
-        "dias_restantes": 1,
-        "monto_ingresado": 1000
     }
 ]
