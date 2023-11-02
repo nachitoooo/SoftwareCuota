@@ -1,9 +1,22 @@
 [
     {
-        "nombre": "Favio",
+        "nombre": "sfssf",
         "dni": "18554049",
         "apellido": "Aristegui",
-        "dias_restantes": 30,
+        "dias_restantes": 29
+    },
+    {
+        "nombre": "Ignacio",
+        "dni": "46264261",
+        "apellido": "Aristegui",
+        "dias_restantes": 29,
+        "monto_ingresado": 6000
+    },
+    {
+        "nombre": "osdlkasd",
+        "dni": "12123123",
+        "apellido": "asdasdas",
+        "dias_restantes": 29,
         "monto_ingresado": 6000
     }
 ]

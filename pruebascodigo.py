@@ -142,24 +142,27 @@ def editar_cliente():
         global ventana_edicion
         ventana_edicion = tk.Toplevel()
         ventana_edicion.title("Editar Cliente")
-        
-        ttk.Label(ventana_edicion, text="Nombre:").pack()
-        entry_nombre = ttk.Entry(ventana_edicion)
+
+        fuente = ("Arial", 15)
+
+        # Crea etiquetas con la fuente configurada
+        CTkLabel(ventana_edicion, text="Nombre:", text_color="black", width=350, font=fuente).pack()
+        entry_nombre = CTkEntry(ventana_edicion, font=fuente)
         entry_nombre.insert(0, cliente_seleccionado[0])
         entry_nombre.pack()
-        
-        ttk.Label(ventana_edicion, text="Apellido:").pack()
-        entry_apellido = ttk.Entry(ventana_edicion)
+
+        CTkLabel(ventana_edicion, text="Apellido:", text_color="black", width=350, font=fuente).pack()
+        entry_apellido = CTkEntry(ventana_edicion, font=fuente)
         entry_apellido.insert(0, cliente_seleccionado[2])
         entry_apellido.pack()
-        
-        ttk.Label(ventana_edicion, text="DNI:").pack()
-        entry_dni = ttk.Entry(ventana_edicion)
+
+        CTkLabel(ventana_edicion, text="DNI:", text_color="black", width=350, font=fuente).pack()
+        entry_dni = CTkEntry(ventana_edicion, font=fuente)
         entry_dni.insert(0, cliente_seleccionado[1])
         entry_dni.pack()
-        
-        ttk.Label(ventana_edicion, text="Días Restantes:").pack()
-        entry_dias = ttk.Entry(ventana_edicion)
+
+        CTkLabel(ventana_edicion, text="Días Restantes:", text_color="black", width=350, font=fuente).pack()
+        entry_dias = CTkEntry(ventana_edicion, font=fuente)
         entry_dias.insert(0, cliente_seleccionado[3])
         entry_dias.pack()
         
@@ -190,7 +193,10 @@ def editar_cliente():
                             ventana_edicion.destroy()
                             actualizar_lista_clientes()
 
-        ttk.Button(ventana_edicion, text="Guardar Cambios", command=guardar_cambios).pack()
+        saveIcon = CTkImage(Image.open(r"icon\save.png"))
+        CTkButton(ventana_edicion, image=saveIcon,text_color='#bdbdbd',corner_radius=25, fg_color="#333333", text="Guardar Cambios", command=guardar_cambios).pack()
+
+
         
 def eliminar_cliente(lista_clientes):
     item_seleccionado = lista_clientes.selection()
@@ -295,8 +301,8 @@ def crear_interfaz():
     logo_path = os.path.join("icon", "logo_gimnasio.png")
     if os.path.exists(logo_path):
         logo_image = Image.open(logo_path)
-        nuevo_ancho = 300
-        nuevo_alto = 300
+        nuevo_ancho = 330
+        nuevo_alto = 330
         logo_image = logo_image.resize((nuevo_ancho, nuevo_alto), Image.LANCZOS)
         logo_photo = ImageTk.PhotoImage(logo_image)
         logo_label = tk.Label(frame_main, image=logo_photo, bg="black")
@@ -344,17 +350,18 @@ def crear_interfaz():
     boton_ver_clientes.pack(side=tk.LEFT, padx=10, pady=10)
     boton_ver_clientes.configure(hover_color="#f57b01")
 
-    boton_verificar_dni = CTkButton(frame_main, text="Verificar DNI", command=verificar_dni, corner_radius = 25, text_color="black", font=("Helvetica", 12, "bold"))
+    verify_dni_Img = CTkImage(Image.open(r"icon\icons8-verify-30.png"))
+    boton_verificar_dni = CTkButton(frame_main, text="Verificar DNI", image=verify_dni_Img, fg_color="#FFA500", hover_color=("#f57b01"), command=verificar_dni, corner_radius = 25, text_color="black", font=("Helvetica", 12, "bold"))
     boton_verificar_dni.pack(pady=10)
     global entry_dni_a_verificar
-    entry_dni_a_verificar = CTkEntry(frame_main, font=("Helvetica", 12), placeholder_text="Ingrese su DNI.")
+    entry_dni_a_verificar = CTkEntry(frame_main, font=("Helvetica", 12), placeholder_text="Ingrese su DNI.", width=200, corner_radius=13)
     entry_dni_a_verificar.pack(pady=5)
 
-    ttk.Label(frame_nuevo_cliente, text="Días Deseados", background="black", font=("Helvetica", 12), foreground="white").pack()
+    ttk.Label(frame_nuevo_cliente, text="Días Abonados", background="black", font=("Helvetica", 12), foreground="white").pack()
     entry_dias = CTkEntry(frame_nuevo_cliente, font=("Helvetica", 12), fg_color="black")
     entry_dias.pack(fill=tk.X, padx=10, pady=10)
 
-    ttk.Label(frame_nuevo_cliente, text="Monto Ingresado", background="black", font=("Helvetica", 12), foreground="white").pack()
+    ttk.Label(frame_nuevo_cliente, text="Monto Abonado", background="black", font=("Helvetica", 12), foreground="white").pack()
     entry_monto_ingresado = CTkEntry(frame_nuevo_cliente, font=("Helvetica", 12), fg_color="black")
     entry_monto_ingresado.pack(fill=tk.X, padx=10, pady=10)
     
@@ -370,7 +377,6 @@ if __name__ == "__main__":
     if ultima_actualizacion:
         ultima_actualizacion = ultima_actualizacion() 
         restar_dia_a_clientes(clientes, ultima_actualizacion)
-
     guardar_datos(clientes)
     guardar_ultima_actualizacion()
     crear_interfaz()
