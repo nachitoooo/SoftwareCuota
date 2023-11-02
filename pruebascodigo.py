@@ -313,15 +313,15 @@ def crear_interfaz():
     frame_nuevo_cliente.pack(padx=10, pady=10, expand=True)    
 
     ttk.Label(frame_nuevo_cliente, text="DNI", background="black", font=("Helvetica", 12), foreground="white").pack()
-    entry_dni = CTkEntry(frame_nuevo_cliente, font=("Helvetica", 12), bg_color="white", fg_color="black")
+    entry_dni = CTkEntry(frame_nuevo_cliente, font=("Helvetica", 12), bg_color="black", fg_color="black", corner_radius=10, placeholder_text="Ingrese DNI")
     entry_dni.pack(fill=tk.X, padx=10, pady=10)
 
     ttk.Label(frame_nuevo_cliente, text="Nombre", background="black", font=("Helvetica", 12), foreground="white").pack()
-    entry_nombre = CTkEntry(frame_nuevo_cliente, font=("Helvetica", 12), bg_color="white", fg_color="black")
+    entry_nombre = CTkEntry(frame_nuevo_cliente, font=("Helvetica", 12), bg_color="black", fg_color="black", corner_radius=10, placeholder_text="Ingrese nombre")
     entry_nombre.pack(fill=tk.X, padx=10, pady=10)    
 
     ttk.Label(frame_nuevo_cliente, text="Apellido", background="black", font=("Helvetica", 12), foreground="white").pack()
-    entry_apellido = CTkEntry(frame_nuevo_cliente, font=("Helvetica", 12), bg_color="white", fg_color="black")
+    entry_apellido = CTkEntry(frame_nuevo_cliente, font=("Helvetica", 12), bg_color="black", fg_color="black", corner_radius=10, placeholder_text="Ingrese apellido")
     entry_apellido.pack(fill=tk.X, padx=10, pady=10)
     button_frame = tk.Frame(frame_nuevo_cliente, bg="black")
     button_frame.pack(pady=10)
@@ -358,11 +358,11 @@ def crear_interfaz():
     entry_dni_a_verificar.pack(pady=5)
 
     ttk.Label(frame_nuevo_cliente, text="Días Abonados", background="black", font=("Helvetica", 12), foreground="white").pack()
-    entry_dias = CTkEntry(frame_nuevo_cliente, font=("Helvetica", 12), fg_color="black")
+    entry_dias = CTkEntry(frame_nuevo_cliente, font=("Helvetica", 12), fg_color="black", corner_radius=10, placeholder_text="Ingrese días")
     entry_dias.pack(fill=tk.X, padx=10, pady=10)
 
     ttk.Label(frame_nuevo_cliente, text="Monto Abonado", background="black", font=("Helvetica", 12), foreground="white").pack()
-    entry_monto_ingresado = CTkEntry(frame_nuevo_cliente, font=("Helvetica", 12), fg_color="black")
+    entry_monto_ingresado = CTkEntry(frame_nuevo_cliente, font=("Helvetica", 12), fg_color="black", corner_radius=10, placeholder_text="Ingrese monto")
     entry_monto_ingresado.pack(fill=tk.X, padx=10, pady=10)
     
     sidebarImg = CTkImage(Image.open(r"icon\MaterialSymbolsMenu.png"))

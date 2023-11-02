@@ -18,5 +18,12 @@
         "apellido": "asdasdas",
         "dias_restantes": 29,
         "monto_ingresado": 6000
+    },
+    {
+        "nombre": "marcos",
+        "dni": "12345678",
+        "apellido": "putito",
+        "dias_restantes": 1,
+        "monto_ingresado": 1000
     }
 ]
