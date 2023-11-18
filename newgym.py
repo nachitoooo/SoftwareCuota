@@ -21,19 +21,18 @@ def cargar_ultima_actualizacion():
     except FileNotFoundError:
         return None
 
-# Función para actualizar los días restantes de los clientes
 def restar_dia_a_clientes(clientes, ultima_actualizacion):
-    fecha_actual = datetime.datetime.now()
-    diferencia = fecha_actual - ultima_actualizacion
-    dias_pasados = diferencia.days
+    if ultima_actualizacion is not None:
+        fecha_actual = datetime.datetime.now()
+        diferencia = fecha_actual - ultima_actualizacion
+        dias_pasados = diferencia.days
 
-    if dias_pasados > 0:
-        for cliente in clientes:
-            dias_restantes = int(cliente["dias_restantes"])
-            if dias_restantes > 0:
-                cliente["dias_restantes"] = max(dias_restantes - dias_pasados, 0)
+        if dias_pasados > 0:
+            for cliente in clientes:
+                dias_restantes = int(cliente["dias_restantes"])
+                if dias_restantes > 0:
+                    cliente["dias_restantes"] = max(dias_restantes - dias_pasados, 0)
 
-# Función para guardar la fecha actual como la nueva última actualización
 def guardar_ultima_actualizacion():
     fecha_actual = datetime.datetime.now()
     with open("ultima_actualizacion.txt", "w") as file:
@@ -47,7 +46,6 @@ def cargar_datos():
     except FileNotFoundError:
         return []
     
-
 def verificar_dni():
     dni_a_verificar = entry_dni_a_verificar.get()
     clientes = cargar_datos()
@@ -63,9 +61,8 @@ def verificar_dni():
             else:
                 messagebox.showinfo("DNI Encontrado", f"El DNI {dni_a_verificar} se encuentra en la base de datos. Está al día.")
             break
-
     if not dni_encontrado:
-        messagebox.showerror("NEW GYM -- DNI no encontrado", f"El DNI {dni_a_verificar} no se encuentra en la base de datos.")
+        messagebox.showerror("PURA VIDA -- DNI no encontrado", f"El DNI {dni_a_verificar} no se encuentra en la base de datos.")
 
 def agregar_cliente(entry_dni, entry_nombre, entry_apellido, entry_dias, entry_monto_ingresado):
     monto = entry_monto_ingresado.get()
@@ -193,8 +190,6 @@ def editar_cliente():
         tk.Frame(ventana_edicion, height=20).pack()
         saveIcon = CTkImage(Image.open(r"icon\save.png"))
         CTkButton(ventana_edicion, image=saveIcon,font=("Helvetica", 12, "bold"), text_color='black',corner_radius=25, fg_color="#FFA500", hover_color="#f57b01", text="Guardar Cambios", command=guardar_cambios).pack()
-
-
         
 def eliminar_cliente(lista_clientes):
     item_seleccionado = lista_clientes.selection()
@@ -244,7 +239,8 @@ def ver_clientes():
         frame_busqueda = ttk.Frame(ventana_clientes)
         frame_busqueda.pack(pady=10, padx=10)
 
-        searchIcon = CTkImage(Image.open(r"icon\search.png"))
+        searchIcon = CTkImage(Image.open("icon/search.png"))
+
         buttonSearch = CTkButton(frame_busqueda, text="Buscar cliente",font=("Helvetica", 12, "bold"), text_color='black', image=searchIcon, width=35, height=35, fg_color='#FFA500', hover_color="#f57b01", corner_radius=10, command=buscar_cliente)
         buttonSearch.grid(row=0, column=1, padx=10)
 
@@ -268,11 +264,11 @@ def ver_clientes():
         frame_botones = ttk.Frame(ventana_clientes)
         frame_botones.pack(pady=10)
         
-        pencilIcon = CTkImage(Image.open(r"icon\pencil.png"))
+        pencilIcon = CTkImage(Image.open("icon/pencil.png"))
         boton_editar = CTkButton(frame_botones, text="Editar Cliente", font=("Helvetica", 12, "bold"), fg_color="#FFA500", hover_color="#f57b01", text_color="black", command=editar_cliente, image=pencilIcon, corner_radius=10)
         boton_editar.grid(row=0, column=0, padx=10)
 
-        deleteIcon = CTkImage(Image.open(r"icon\delete.png"))
+        deleteIcon = CTkImage(Image.open("icon/delete.png"))
         boton_eliminar = CTkButton(frame_botones, text="Eliminar Cliente", font=("Helvetica", 12, "bold"), fg_color="#FFA500",hover_color="#f57b01", text_color="black", image=deleteIcon, corner_radius=10, command=lambda: eliminar_cliente(lista_clientes))
         boton_eliminar.grid(row=0, column=1, padx=10)
         
@@ -289,18 +285,18 @@ def guardar_datos(clientes):
 
 def crear_interfaz():
     root = CTk()
-    root.title("NEW GYM - CONTROL MEMBRESÍA")
+    root.title("Pura vida - Software")
     root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth(), root.winfo_screenheight()))
     root.configure(bg="black")
 
     frame_main = tk.Frame(root, bg="black")
     frame_main.pack(expand=True, fill="both")
     
-    logo_path = os.path.join("icon", "logo_gimnasio.png")
+    logo_path = os.path.join("icon", "logo.png")
     if os.path.exists(logo_path):
         logo_image = Image.open(logo_path)
-        nuevo_ancho = 330
-        nuevo_alto = 330
+        nuevo_ancho = 668
+        nuevo_alto = 374
         logo_image = logo_image.resize((nuevo_ancho, nuevo_alto), Image.LANCZOS)
         logo_photo = ImageTk.PhotoImage(logo_image)
         logo_label = tk.Label(frame_main, image=logo_photo, bg="black")
@@ -348,7 +344,8 @@ def crear_interfaz():
     boton_ver_clientes.pack(side=tk.LEFT, padx=10, pady=10)
     boton_ver_clientes.configure(hover_color="#f57b01")
 
-    verify_dni_Img = CTkImage(Image.open(r"icon\icons8-verify-30.png"))
+    verify_dni_Img = CTkImage(Image.open("icon/icons8-verify-30.png"))
+
     boton_verificar_dni = CTkButton(frame_main, text="Verificar DNI", image=verify_dni_Img, fg_color="#FFA500", hover_color=("#f57b01"), command=verificar_dni, corner_radius = 25, text_color="black", font=("Helvetica", 12, "bold"))
     boton_verificar_dni.pack(pady=10)
     global entry_dni_a_verificar
