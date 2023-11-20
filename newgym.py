@@ -5,7 +5,6 @@ from PIL import Image, ImageTk
 import json
 from customtkinter import *
 import datetime
-#variables globales
 
 lista_clientes = None
 ventana_clientes = None
@@ -31,8 +30,8 @@ def restar_dia_a_clientes(clientes, ultima_actualizacion):
             for cliente in clientes:
                 dias_restantes = int(cliente["dias_restantes"])
                 if dias_restantes > 0:
-                    cliente["dias_restantes"] = max(dias_restantes - dias_pasados, 0)
-
+                    cliente["dias_restantes"] = max(dias_restantes - dias_pasados, 0)                     
+                    
 def guardar_ultima_actualizacion():
     fecha_actual = datetime.datetime.now()
     with open("ultima_actualizacion.txt", "w") as file:
@@ -96,8 +95,9 @@ def obtener_cliente_seleccionado(lista_clientes):
     
 
 def actualizar_lista_clientes():
-    lista_clientes.delete(*lista_clientes.get_children())  
-    clientes = cargar_datos()  
+    lista_clientes.delete(*lista_clientes.get_children())
+    clientes = cargar_datos()
+
     for cliente in clientes:
         lista_clientes.insert("", "end", values=(cliente["nombre"], cliente["dni"], cliente["apellido"], cliente["dias_restantes"]))
 
@@ -188,7 +188,7 @@ def editar_cliente():
                             actualizar_lista_clientes()
 
         tk.Frame(ventana_edicion, height=20).pack()
-        saveIcon = CTkImage(Image.open(r"icon\save.png"))
+        saveIcon = CTkImage(Image.open("icon/save.png"))
         CTkButton(ventana_edicion, image=saveIcon,font=("Helvetica", 12, "bold"), text_color='black',corner_radius=25, fg_color="#FFA500", hover_color="#f57b01", text="Guardar Cambios", command=guardar_cambios).pack()
         
 def eliminar_cliente(lista_clientes):
@@ -237,29 +237,35 @@ def ver_clientes():
         style.configure("TButton", font=("Helvetica", 12))
         style.configure("TEntry", font=("Helvetica", 12))
         frame_busqueda = ttk.Frame(ventana_clientes)
-        frame_busqueda.pack(pady=10, padx=10)
+        frame_busqueda.pack(pady=5, padx=5)
 
         searchIcon = CTkImage(Image.open("icon/search.png"))
 
         buttonSearch = CTkButton(frame_busqueda, text="Buscar cliente",font=("Helvetica", 12, "bold"), text_color='black', image=searchIcon, width=35, height=35, fg_color='#FFA500', hover_color="#f57b01", corner_radius=10, command=buscar_cliente)
         buttonSearch.grid(row=0, column=1, padx=10)
 
-        label_buscar_cliente = CTkEntry(frame_busqueda, font=("Helvetica", 12), placeholder_text="Buscar por nombre, apellido o DNI.", width=400)
+        label_buscar_cliente = CTkEntry(frame_busqueda, font=("Helvetica", 12), placeholder_text="Buscar por nombre, apellido o DNI.", justify="center", width=303)
         label_buscar_cliente.grid(row=0, column=0, padx=10)
         
-        lista_clientes = ttk.Treeview(ventana_clientes, columns=("Nombre", "DNI", "Apellido", "Días Restantes", "Monto Ingresado"), show="headings")
+        lista_clientes = ttk.Treeview(ventana_clientes, columns=("Nombre", "DNI", "Apellido", "Días Restantes", "Monto Abonado"), show="headings")
         lista_clientes.heading("Nombre", text="Nombre")
         lista_clientes.heading("Apellido", text="Apellido")
         lista_clientes.heading("DNI", text="DNI")
         lista_clientes.heading("Días Restantes", text="Días Restantes")
-        lista_clientes.heading("Monto Ingresado", text="Monto Ingresado")
+        lista_clientes.heading("Monto Abonado", text="Monto Abonado")
 
         scroll_y = ttk.Scrollbar(ventana_clientes, orient="vertical", command=lista_clientes.yview)
         lista_clientes.configure(yscrollcommand=scroll_y.set)
         clientes = cargar_datos()
         if clientes:
             for cliente in clientes:
-                lista_clientes.insert("", "end", values=(cliente["nombre"], cliente["dni"], cliente["apellido"], cliente["dias_restantes"], cliente.get("monto_ingresado", 0.0)))
+                dias_restantes = cliente["dias_restantes"]
+                if dias_restantes <= 0:
+                    lista_clientes.insert("", "end", values=(cliente["nombre"], cliente["dni"], cliente["apellido"], cliente["dias_restantes"], cliente.get("monto_ingresado", 0.0)), tags=('rojo',))
+                else:
+                    lista_clientes.insert("", "end", values=(cliente["nombre"], cliente["dni"], cliente["apellido"], cliente["dias_restantes"], cliente.get("monto_ingresado", 0.0)))
+
+        lista_clientes.tag_configure('rojo', background='#ff5757')  
 
         frame_botones = ttk.Frame(ventana_clientes)
         frame_botones.pack(pady=10)
@@ -283,86 +289,91 @@ def guardar_datos(clientes):
         with open("clientes.json", "w") as file:
             json.dump(clientes, file, indent=4)
 
+def toggle_fullscreen(event, root):
+    root.attributes('-fullscreen', not root.attributes('-fullscreen'))
+
 def crear_interfaz():
     root = CTk()
-    root.title("Pura vida - Software")
-    root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth(), root.winfo_screenheight()))
-    root.configure(bg="black")
-
+    root.title("Pura vida - Software de control de Cuota de clientes.")
+    icon_path = "icon/gym_logo.png"
+    root.iconbitmap(default=icon_path)
+    
+    root.attributes('-fullscreen', True)
+    root.bind("<Escape>", lambda event: toggle_fullscreen(event, root))
+    
     frame_main = tk.Frame(root, bg="black")
     frame_main.pack(expand=True, fill="both")
-    
     logo_path = os.path.join("icon", "logo.png")
     if os.path.exists(logo_path):
         logo_image = Image.open(logo_path)
-        nuevo_ancho = 668
-        nuevo_alto = 374
+        nuevo_ancho = 500
+        nuevo_alto = 300
         logo_image = logo_image.resize((nuevo_ancho, nuevo_alto), Image.LANCZOS)
         logo_photo = ImageTk.PhotoImage(logo_image)
         logo_label = tk.Label(frame_main, image=logo_photo, bg="black")
         logo_label.image = logo_photo
-        logo_label.pack(pady=10)
+        logo_label.pack(pady=0)
 
-    frame_nuevo_cliente = tk.Frame(frame_main, bg="black", bd=1.4, relief=tk.RIDGE, padx=20, pady=20)
-    frame_nuevo_cliente.pack(padx=10, pady=10, expand=True)    
+    frame_nuevo_cliente = tk.Frame(frame_main, bg="black", bd=1.4, relief=tk.RIDGE, padx=10, pady=10)
+    frame_nuevo_cliente.pack(padx=10, pady=10, expand=True)
+    frame_nuevo_cliente.configure(padx=5, pady=5)
 
     ttk.Label(frame_nuevo_cliente, text="DNI", background="black", font=("Helvetica", 12), foreground="white").pack()
-    entry_dni = CTkEntry(frame_nuevo_cliente, font=("Helvetica", 12), bg_color="black", fg_color="black", corner_radius=10, placeholder_text="Ingrese DNI")
-    entry_dni.pack(fill=tk.X, padx=10, pady=10)
+    entry_dni = CTkEntry(frame_nuevo_cliente, font=("Arial", 12), bg_color="black", fg_color="black", corner_radius=10, placeholder_text="Ingrese DNI", justify="center")
+    entry_dni.pack(fill=tk.X, padx=5, pady=5)
 
     ttk.Label(frame_nuevo_cliente, text="Nombre", background="black", font=("Helvetica", 12), foreground="white").pack()
-    entry_nombre = CTkEntry(frame_nuevo_cliente, font=("Helvetica", 12), bg_color="black", fg_color="black", corner_radius=10, placeholder_text="Ingrese nombre")
-    entry_nombre.pack(fill=tk.X, padx=10, pady=10)    
+    entry_nombre = CTkEntry(frame_nuevo_cliente, font=("Arial", 12), bg_color="black", fg_color="black", corner_radius=10, placeholder_text="Ingrese nombre", justify="center")
+    entry_nombre.pack(fill=tk.X, padx=5, pady=5)
 
     ttk.Label(frame_nuevo_cliente, text="Apellido", background="black", font=("Helvetica", 12), foreground="white").pack()
-    entry_apellido = CTkEntry(frame_nuevo_cliente, font=("Helvetica", 12), bg_color="black", fg_color="black", corner_radius=10, placeholder_text="Ingrese apellido")
-    entry_apellido.pack(fill=tk.X, padx=10, pady=10)
+    entry_apellido = CTkEntry(frame_nuevo_cliente, font=("Arial", 12), bg_color="black", fg_color="black", corner_radius=10, placeholder_text="Ingrese apellido", justify="center")
+    entry_apellido.pack(fill=tk.X, padx=5, pady=5)
     button_frame = tk.Frame(frame_nuevo_cliente, bg="black")
-    button_frame.pack(pady=10)
+    button_frame.pack(pady=5)
 
     boton_agregar_cliente = CTkButton(
-    button_frame, 
-    text="Agregar Cliente",
-    corner_radius=25,
-    text_color="black",
-    fg_color="#FFA500",
-    font=("Helvetica", 14, "bold"),  
-    command=lambda: agregar_cliente(entry_dni, entry_nombre, entry_apellido, entry_dias, entry_monto_ingresado)
+        button_frame,
+        text="Agregar Cliente",
+        corner_radius=25,
+        text_color="black",
+        fg_color="#FFA500",
+        font=("Helvetica", 14, "bold"),
+        command=lambda: agregar_cliente(entry_dni, entry_nombre, entry_apellido, entry_dias, entry_monto_ingresado)
     )
     boton_agregar_cliente.pack(side=tk.LEFT, padx=10, pady=10)
     boton_agregar_cliente.configure(hover_color="#f57b01")
+
     boton_ver_clientes = CTkButton(
-    button_frame, 
-    text="Gestionar Clientes",
-    corner_radius=25,
-    fg_color="#FFA500",
-    text_color="black",
-    font=("Helvetica", 14, "bold"),  
-    command=ver_clientes
-)
+        button_frame,
+        text="Gestionar Clientes",
+        corner_radius=25,
+        fg_color="#FFA500",
+        text_color="black",
+        font=("Helvetica", 14, "bold"),
+        command=ver_clientes
+    )
     
+
     boton_ver_clientes.pack(side=tk.LEFT, padx=10, pady=10)
     boton_ver_clientes.configure(hover_color="#f57b01")
 
     verify_dni_Img = CTkImage(Image.open("icon/icons8-verify-30.png"))
-
-    boton_verificar_dni = CTkButton(frame_main, text="Verificar DNI", image=verify_dni_Img, fg_color="#FFA500", hover_color=("#f57b01"), command=verificar_dni, corner_radius = 25, text_color="black", font=("Helvetica", 12, "bold"))
+    boton_verificar_dni = CTkButton(frame_main, text="Verificar DNI", image=verify_dni_Img, fg_color="#FFA500", hover_color=("#f57b01"), command=verificar_dni, corner_radius=25, text_color="black", font=("Helvetica", 12, "bold"))
     boton_verificar_dni.pack(pady=10)
+    
     global entry_dni_a_verificar
-    entry_dni_a_verificar = CTkEntry(frame_main, font=("Helvetica", 12), placeholder_text="Ingrese su DNI.", width=200, corner_radius=13)
+    entry_dni_a_verificar = CTkEntry(frame_main, font=("Helvetica", 12), placeholder_text="Ingrese DNI a verificar.", width=200, corner_radius=13, justify="center")
     entry_dni_a_verificar.pack(pady=5)
 
-    ttk.Label(frame_nuevo_cliente, text="Días Abonados", background="black", font=("Helvetica", 12), foreground="white").pack()
-    entry_dias = CTkEntry(frame_nuevo_cliente, font=("Helvetica", 12), fg_color="black", corner_radius=10, placeholder_text="Ingrese días")
+    ttk.Label(frame_nuevo_cliente, text="Días Abonados", background="black", font=("Arial", 12), foreground="white").pack()
+    entry_dias = CTkEntry(frame_nuevo_cliente, font=("Helvetica", 12), fg_color="black", corner_radius=10, placeholder_text="Ingrese días", justify="center")
     entry_dias.pack(fill=tk.X, padx=10, pady=10)
 
-    ttk.Label(frame_nuevo_cliente, text="Monto Abonado", background="black", font=("Helvetica", 12), foreground="white").pack()
-    entry_monto_ingresado = CTkEntry(frame_nuevo_cliente, font=("Helvetica", 12), fg_color="black", corner_radius=10, placeholder_text="Ingrese monto")
+    ttk.Label(frame_nuevo_cliente, text="Monto Abonado", background="black", font=("Arial", 12), foreground="white").pack()
+    entry_monto_ingresado = CTkEntry(frame_nuevo_cliente, font=("Helvetica", 12), fg_color="black", corner_radius=10, placeholder_text="Ingrese monto", justify="center")
     entry_monto_ingresado.pack(fill=tk.X, padx=10, pady=10)
-    
-    sidebarImg = CTkImage(Image.open(r"icon\MaterialSymbolsMenu.png"))
-    buttonSideBar = CTkButton(frame_main, text = "" , image=sidebarImg, width=35, height=35, fg_color='black')
-    buttonSideBar.place(relx=0, rely=0)
+
     root.mainloop()
 
 if __name__ == "__main__":
