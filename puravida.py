@@ -227,10 +227,12 @@ def ver_clientes():
     global lista_clientes
     global ventana_clientes
     global label_buscar_cliente 
-
+    
     if ventana_clientes is None or not ventana_clientes.winfo_exists():
         ventana_clientes = tk.Toplevel()
         ventana_clientes.title("Lista de Clientes")
+        client_logo_path = "icon/client.ico"
+        ventana_clientes.iconbitmap(client_logo_path)
         ventana_clientes.geometry("800x800")
         style = ttk.Style()
         style.configure("Title.TLabel", background="black", font=("Helvetica", 14), foreground="white")
@@ -295,12 +297,12 @@ def toggle_fullscreen(event, root):
 def crear_interfaz():
     root = CTk()
     root.title("Pura vida - Software de control de Cuota de clientes.")
-    icon_path = "icon/gym_logo.png"
-    root.iconbitmap(default=icon_path)
+    imagen = "icon/gymlogo.ico"
+    root.iconbitmap(imagen)
     
     root.attributes('-fullscreen', True)
-    root.bind("<Escape>", lambda event: toggle_fullscreen(event, root))
-    
+    root.bind("<F11>", lambda event: toggle_fullscreen(event, root))
+
     frame_main = tk.Frame(root, bg="black")
     frame_main.pack(expand=True, fill="both")
     logo_path = os.path.join("icon", "logo.png")
