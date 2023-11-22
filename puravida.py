@@ -19,7 +19,14 @@ def cargar_ultima_actualizacion():
                 return datetime.datetime.strptime(fecha_str, "%Y-%m-%d")
     except FileNotFoundError:
         return None
-
+    
+def actualizar_deuda_dias(clientes):
+    for cliente in clientes:
+        dias_restantes = cliente["dias_restantes"]
+        if dias_restantes <= 0:
+            # Incrementar la deuda de días
+            cliente["deuda_dias"] = cliente.get("deuda_dias", 0) + 1
+            
 def restar_dia_a_clientes(clientes, ultima_actualizacion):
     if ultima_actualizacion is not None:
         fecha_actual = datetime.datetime.now()
@@ -30,7 +37,9 @@ def restar_dia_a_clientes(clientes, ultima_actualizacion):
             for cliente in clientes:
                 dias_restantes = int(cliente["dias_restantes"])
                 if dias_restantes > 0:
-                    cliente["dias_restantes"] = max(dias_restantes - dias_pasados, 0)                     
+                    cliente["dias_restantes"] = max(dias_restantes - dias_pasados, 0)
+                    
+            actualizar_deuda_dias(clientes)
                     
 def guardar_ultima_actualizacion():
     fecha_actual = datetime.datetime.now()
@@ -76,14 +85,23 @@ def agregar_cliente(entry_dni, entry_nombre, entry_apellido, entry_dias, entry_m
             messagebox.showerror("Error. El monto ingresado no es válido.")
             return
         clientes = cargar_datos()
-        nuevo_cliente = {"nombre": nombre, "dni": dni, "apellido": apellido, "dias_restantes": int(dias), "monto_ingresado": monto}  
+        nuevo_cliente = {
+            "nombre": nombre,
+            "dni": dni,
+            "apellido": apellido,
+            "dias_restantes": int(dias),
+            "monto_ingresado": monto,
+            "deuda_dias": 0  # Inicializar la deuda de días en 0
+        }
         clientes.append(nuevo_cliente)
         guardar_datos(clientes)
         entry_dni.delete(0, tk.END)
         entry_nombre.delete(0, tk.END)
         entry_apellido.delete(0, tk.END)
         entry_dias.delete(0, tk.END)
-        entry_monto_ingresado.delete(0, tk.END)  
+        entry_monto_ingresado.delete(0, tk.END)
+
+# Resto de tu código...
 
 def obtener_cliente_seleccionado(lista_clientes):
     item_seleccionado = lista_clientes.selection()
@@ -249,11 +267,12 @@ def ver_clientes():
         label_buscar_cliente = CTkEntry(frame_busqueda, font=("Helvetica", 12), placeholder_text="Buscar por nombre, apellido o DNI.", justify="center", width=303)
         label_buscar_cliente.grid(row=0, column=0, padx=10)
         
-        lista_clientes = ttk.Treeview(ventana_clientes, columns=("Nombre", "DNI", "Apellido", "Días Restantes", "Monto Abonado"), show="headings")
+        lista_clientes = ttk.Treeview(ventana_clientes, columns=("Nombre", "DNI", "Apellido", "Días Restantes", "Días Adeudados", "Monto Abonado"), show="headings")
         lista_clientes.heading("Nombre", text="Nombre")
         lista_clientes.heading("Apellido", text="Apellido")
         lista_clientes.heading("DNI", text="DNI")
         lista_clientes.heading("Días Restantes", text="Días Restantes")
+        lista_clientes.heading("Días Adeudados", text="Días Adeudados")
         lista_clientes.heading("Monto Abonado", text="Monto Abonado")
 
         scroll_y = ttk.Scrollbar(ventana_clientes, orient="vertical", command=lista_clientes.yview)
@@ -262,12 +281,13 @@ def ver_clientes():
         if clientes:
             for cliente in clientes:
                 dias_restantes = cliente["dias_restantes"]
+                dias_adeudados = cliente.get("deuda_dias", 0)  # Obtener los días adeudados
                 if dias_restantes <= 0:
-                    lista_clientes.insert("", "end", values=(cliente["nombre"], cliente["dni"], cliente["apellido"], cliente["dias_restantes"], cliente.get("monto_ingresado", 0.0)), tags=('rojo',))
+                    lista_clientes.insert("", "end", values=(cliente["nombre"], cliente["dni"], cliente["apellido"], dias_restantes, dias_adeudados, cliente.get("monto_ingresado", 0.0)), tags=('rojo',))
                 else:
-                    lista_clientes.insert("", "end", values=(cliente["nombre"], cliente["dni"], cliente["apellido"], cliente["dias_restantes"], cliente.get("monto_ingresado", 0.0)))
+                    lista_clientes.insert("", "end", values=(cliente["nombre"], cliente["dni"], cliente["apellido"], dias_restantes, "No adeuda dias.", cliente.get("monto_ingresado", 0.0)))
 
-        lista_clientes.tag_configure('rojo', background='#ff5757')  
+        lista_clientes.tag_configure('rojo', background='#ff5757')
 
         frame_botones = ttk.Frame(ventana_clientes)
         frame_botones.pack(pady=10)
