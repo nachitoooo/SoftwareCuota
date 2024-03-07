@@ -1,18 +1,10 @@
 [
     {
-        "nombre": "Ignacio",
-        "dni": "18554049",
-        "apellido": "Aristegui",
-        "dias_restantes": 0,
-        "monto_ingresado": 3000,
-        "deuda_dias": 2
-    },
-    {
-        "nombre": "Ignacio",
-        "dni": "46264261",
-        "apellido": "Aristegui",
-        "dias_restantes": 0,
+        "nombre": "pruebads",
+        "dni": "230230932",
+        "apellido": "pruebads2",
+        "dias_restantes": 1,
         "monto_ingresado": 1000,
-        "deuda_dias": 1
+        "deuda_dias": 0
     }
 ]
