@@ -1,0 +1,5 @@
+- CLONE THE REPOSITORY
+- CD SoftwareCuota
+- pip install requirements.txt
+- python SoftwareCuota.py
+- Enjoy!
